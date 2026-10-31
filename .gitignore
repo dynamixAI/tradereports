@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# build output and test coverage
+dist/
+build/
+coverage/
+
+# environment files and secrets
+.env
+.env.*
+!.env.example
+
+# never commit real client data
+*.csv
+*.xlsx
+*.xls
+# fake test data is allowed, only inside fixtures folders
+!**/fixtures/**/*.csv
+
+# logs
+*.log
+npm-debug.log*
+
+# editor and OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
