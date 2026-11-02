@@ -1,0 +1,15 @@
+{
+  "name": "tradereports",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Turns trade job software exports into checked, plain-English business numbers.",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {}
+}
