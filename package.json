@@ -11,10 +11,23 @@
   "engines": {
     "node": ">=26"
   },
-  "scripts": {},
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p packages/core --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test"
+  },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@vitest/coverage-v8": "5.0.5",
-    "typescript": "7.0.2",
+    "eslint": "10.14.0",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
     "vitest": "5.0.5"
   }
 }
