@@ -8,12 +8,12 @@
 
 ## Test cases created by hand
 
-| Quote | Job | Visit | Invoice | Purpose |
-| --- | --- | --- | --- | --- |
-| #130 (Grace) | #1 | Completed, dated the next day | #2041 (draft) | Full chain; also a future-dated visit |
-| #114 (Frank) | #2 | Completed | None | Finished but not invoiced ("Requires invoicing") |
-| #122 (Sam) | #3 | Completed | #2042 (draft) | Full chain |
-| #104 (Chloe) | #4 | Completed | None | Job status "Action Required" |
+| Quote        | Job | Visit                         | Invoice       | Purpose                                          |
+| ------------ | --- | ----------------------------- | ------------- | ------------------------------------------------ |
+| #130 (Grace) | #1  | Completed, dated the next day | #2041 (draft) | Full chain; also a future-dated visit            |
+| #114 (Frank) | #2  | Completed                     | None          | Finished but not invoiced ("Requires invoicing") |
+| #122 (Sam)   | #3  | Completed                     | #2042 (draft) | Full chain                                       |
+| #104 (Chloe) | #4  | Completed                     | None          | Job status "Action Required"                     |
 
 Quote #116 (Sam) was imported as Approved and never converted, which gives a natural "won but not scheduled" case.
 

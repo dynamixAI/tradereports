@@ -28,10 +28,10 @@ TradeReports does that work for them, and checks the data first.
 
 ## Supported software
 
-| Software | Status |
-| --- | --- |
-| Jobber | Planned for version 1 |
-| Tradify | Planned for version 1 |
+| Software       | Status                             |
+| -------------- | ---------------------------------- |
+| Jobber         | Planned for version 1              |
+| Tradify        | Planned for version 1              |
 | Other software | Planned: map your own columns once |
 
 TradeReports is an independent project and is not affiliated with or endorsed by Jobber, Tradify or any other software vendor.
