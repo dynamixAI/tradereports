@@ -9,5 +9,12 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "papaparse": "5.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "@types/papaparse": "5.5.2"
   }
 }
