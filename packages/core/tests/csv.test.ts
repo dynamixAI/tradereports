@@ -124,6 +124,9 @@ describe('readCsv with real exports', () => {
     { path: 'jobber/one-off-jobs-report.csv', rows: 3, first: 'Job #' },
     { path: 'jobber/visits-report.csv', rows: 3, first: 'Job #' },
     { path: 'tradify/customers-export.csv', rows: 27, first: 'Customer Name' },
+    { path: 'tradify/invoices-export.csv', rows: 5, first: 'Invoice Number' },
+    { path: 'tradify/quotes-export.csv', rows: 3, first: 'Quote No' },
+    { path: 'tradify/jobs-export.csv', rows: 2, first: 'Job Number' },
   ])('reads $path cleanly', ({ path, rows, first }) => {
     const table = readCsv(fixture(path));
     expect(table.issues).toEqual([]);
@@ -162,6 +165,9 @@ describe('fixtures privacy', () => {
     'jobber/visits-report.csv',
     'jobber/clients-export.csv',
     'tradify/customers-export.csv',
+    'tradify/invoices-export.csv',
+    'tradify/quotes-export.csv',
+    'tradify/jobs-export.csv',
   ])('%s contains no real names', (path) => {
     expect(fixture(path).toLowerCase()).not.toMatch(/pius|ajamma/);
   });
