@@ -7,3 +7,4 @@ export * from './model';
 export { convertJobberInvoices } from './jobber/invoices';
 export { detectFile, PROFILES } from './detect';
 export { convertInvoiceFile } from './invoices';
+export { moneyOwed } from './reports/owed';
