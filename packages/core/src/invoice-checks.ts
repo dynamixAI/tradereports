@@ -41,8 +41,12 @@ export function workOutTax(
   };
 }
 
-// pence to "£12.34" for messages
+// pence to "£1,234.56" for messages
 export function pounds(pence: number): string {
   const sign = pence < 0 ? '-' : '';
-  return `${sign}£${(Math.abs(pence) / 100).toFixed(2)}`;
+  const amount = (Math.abs(pence) / 100).toLocaleString('en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${sign}£${amount}`;
 }
