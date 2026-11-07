@@ -26,6 +26,10 @@ describe('cleanCell', () => {
 });
 
 describe('readCsv', () => {
+  it('gives the spreadsheet row number of each row', () => {
+    expect(readCsv('Name,City\nAlice,Wigan\n\nBen,Bolton\n').rowNumbers).toEqual([2, 4]);
+  });
+
   it('reads headers and rows', () => {
     const table = readCsv('Name,City\nAlice,Wigan\nBen,Bolton\n');
     expect(table.headers).toEqual(['Name', 'City']);
