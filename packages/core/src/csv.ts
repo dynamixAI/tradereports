@@ -23,6 +23,8 @@ export type CsvRow = Record<string, string | null>;
 export interface CsvTable {
   headers: string[];
   rows: CsvRow[];
+  // spreadsheet row number of each entry in rows, same order
+  rowNumbers: number[];
   issues: CsvIssue[];
 }
 
@@ -62,7 +64,7 @@ export function readCsv(text: string): CsvTable {
   const [headerRecord, ...dataRecords] = records;
   if (!headerRecord) {
     issues.push({ kind: 'empty-file', row: 1, message: 'The file has no rows.' });
-    return { headers: [], rows: [], issues };
+    return { headers: [], rows: [], rowNumbers: [], issues };
   }
 
   const headers = uniqueHeaders(headerRecord.cells, issues);
@@ -92,7 +94,9 @@ export function readCsv(text: string): CsvTable {
     ) as CsvRow;
   });
 
-  return { headers, rows, issues };
+  const rowNumbers = dataRecords.map(({ row }) => row);
+
+  return { headers, rows, rowNumbers, issues };
 }
 
 // trim headers, name blank ones and number repeats so every column has its own key
