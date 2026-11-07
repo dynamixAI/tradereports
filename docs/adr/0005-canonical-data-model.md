@@ -1,6 +1,6 @@
 # ADR 0005: Canonical data model and source profiles
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 6 November 2026
 
 ## Context
@@ -110,7 +110,7 @@ fixtures. A profile holds:
   which is cost by testing `quantity × price = line amount`; if neither fits,
   stop and ask.
 
-A file that matches no profile goes to the manual column matching screen. The
+A file that matches no profile goes to the manual column matching screen, which suggests matches only when the values support them (for example "98% of values are UK mobile numbers") and lets the user confirm or leave a column unmatched. The
 user's matches can be saved as a new profile.
 
 ### 7. Checks before numbers
