@@ -63,8 +63,8 @@ describe('convertTradifyInvoices with the real export', () => {
 
   it('keeps part payments', () => {
     const iv3 = fixture().records.find((invoice) => invoice.number === 'IV00003');
-    expect(iv3?.paidPence).toBe(5000);
-    expect(iv3?.duePence).toBe(9400);
+    expect(iv3?.paidPence).toEqual({ origin: 'stated', value: 5000 });
+    expect(iv3?.duePence).toEqual({ origin: 'stated', value: 9400 });
   });
 
   it('warns that unsent unpaid invoices may be drafts', () => {
