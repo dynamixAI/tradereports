@@ -62,8 +62,9 @@ export interface Invoice {
   netPence: Known<number>;
   taxPence: number;
   grossPence: number;
-  paidPence: number;
-  duePence: number;
+  // Known, because some exports have no paid column or an unreliable balance
+  paidPence: Known<number>;
+  duePence: Known<number>;
   sent: Known<boolean>;
   lines: Line[];
   source: SourceRef;
@@ -76,7 +77,8 @@ export interface ConvertIssue {
     | 'bad-value'
     | 'inconsistent-rows'
     | 'totals-do-not-add-up'
-    | 'possible-draft';
+    | 'possible-draft'
+    | 'source-quirk';
   rows: number[];
   message: string;
 }

@@ -1,4 +1,5 @@
 import type { CsvRow, CsvTable } from '../csv';
+import { pounds, workOutTax } from '../invoice-checks';
 import { parseMoney } from '../money';
 import {
   derived,
@@ -10,7 +11,6 @@ import {
   type InvoiceStatus,
   type Known,
   type Line,
-  type TaxMode,
 } from '../model';
 
 // columns we can't work without
@@ -134,7 +134,7 @@ function buildInvoice(
     });
   }
 
-  const { taxMode, net } = workOutTax(number, subtotal, tax, total, rowNumbers, issues);
+  const { taxMode, net } = workOutTax(number, subtotal, tax, total, 'subtotal', rowNumbers, issues);
   const dueDate = date(first['Due Date'], number, 'Due Date', rowNumbers, issues);
   const sent = workOutSent(first['Delivery Status']);
   const status = workOutStatus(total, due, dueDate, options.today);
@@ -163,49 +163,11 @@ function buildInvoice(
     netPence: net,
     taxPence: tax,
     grossPence: total,
-    paidPence: paid,
-    duePence: due,
+    paidPence: stated(paid),
+    duePence: stated(due),
     sent,
     lines: rows.map((row) => buildLine(row)),
     source: { tool: 'tradify', file: options.file, rows: rowNumbers },
-  };
-}
-
-// Tradify has no "inclusive/exclusive" column, so work it out from how the totals add up
-function workOutTax(
-  number: string,
-  subtotal: number,
-  tax: number,
-  total: number,
-  rowNumbers: number[],
-  issues: ConvertIssue[],
-): { taxMode: Known<TaxMode>; net: Known<number> } {
-  if (tax === 0 && subtotal === total) {
-    return {
-      taxMode: unknown('no VAT on this invoice, so inclusive and exclusive look the same'),
-      net: derived(total, 'no VAT, so net equals total'),
-    };
-  }
-  if (subtotal === total) {
-    return {
-      taxMode: derived('inclusive', 'subtotal equals total and VAT is above zero'),
-      net: derived(total - tax, 'total minus VAT'),
-    };
-  }
-  if (subtotal + tax === total) {
-    return {
-      taxMode: derived('exclusive', 'subtotal plus VAT equals total'),
-      net: stated(subtotal),
-    };
-  }
-  issues.push({
-    kind: 'totals-do-not-add-up',
-    rows: rowNumbers,
-    message: `${number}: subtotal ${pounds(subtotal)}, VAT ${pounds(tax)} and total ${pounds(total)} don't fit together either way.`,
-  });
-  return {
-    taxMode: unknown("subtotal, VAT and total don't add up"),
-    net: unknown("subtotal, VAT and total don't add up"),
   };
 }
 
@@ -262,10 +224,4 @@ function date(
     message: `${number}: "${column}" is not a date we can read (${value}).`,
   });
   return null;
-}
-
-// pence to "£12.34" for messages
-function pounds(pence: number): string {
-  const sign = pence < 0 ? '-' : '';
-  return `${sign}£${(Math.abs(pence) / 100).toFixed(2)}`;
 }
