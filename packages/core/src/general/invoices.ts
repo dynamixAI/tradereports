@@ -13,7 +13,14 @@ import {
   type TaxMode,
 } from '../model';
 import { findNameMatches, findNameSplits } from '../names';
-import { askQuestions, mergedTable, repairedTable, statusKey, type Answers } from './questions';
+import {
+  askQuestions,
+  mergedTable,
+  noteAmounts,
+  repairedTable,
+  statusKey,
+  type Answers,
+} from './questions';
 
 export interface SpreadsheetOptions {
   businessId: string;
@@ -29,7 +36,11 @@ export function convertSpreadsheet(
 ): ConvertResult<Invoice> {
   // repairs are suggestions; an unanswered one doesn't hold up the rest
   const open = askQuestions(original, answers).filter(
-    (q) => q.kind !== 'repair' && q.kind !== 'same-customer' && q.kind !== 'split-customer',
+    (q) =>
+      q.kind !== 'repair' &&
+      q.kind !== 'same-customer' &&
+      q.kind !== 'split-customer' &&
+      q.kind !== 'note-amount',
   );
   if (open.length > 0) {
     return {
@@ -53,6 +64,12 @@ export function convertSpreadsheet(
   const repaired = (rowNumber: number, header: string | null | undefined) =>
     notes.find((n) => n.row === rowNumber && n.header === header)?.rule ?? null;
   const cols = answers.columns;
+  // part-paid amounts read from notes that the user accepted, by row
+  const fromNotes = new Map(
+    noteAmounts(original, answers)
+      .filter((n) => answers.repairs[n.id] === 'accept')
+      .map((n) => [n.row, n.amount]),
+  );
   // the spelling to use for each customer the user said is the same as another
   const sameAs = new Map<string, string>();
   if (cols.customer) {
@@ -132,6 +149,12 @@ export function convertSpreadsheet(
     const netRule = repaired(rowNumber, cols.net);
     if (netRule && tax.net.origin === 'stated') tax.net = derived(tax.net.value, netRule);
     const paid = workOutPaid(cell(cols.status), cols.status, answers, gross);
+    const note = fromNotes.get(rowNumber);
+    if (note && paid.status.value === 'unpaid' && paid.paid.value === null) {
+      const rule = `you confirmed the note "${note.note}" means ${pounds(note.paidPence)} paid`;
+      paid.paid = derived(note.paidPence, rule);
+      paid.due = derived(note.duePence, rule);
+    }
 
     records.push({
       businessId: options.businessId,

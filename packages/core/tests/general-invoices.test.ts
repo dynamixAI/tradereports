@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readSheet } from '../src/layout';
 import { convertSpreadsheet } from '../src/general/invoices';
-import { emptyAnswers, type Answers } from '../src/general/questions';
+import { askQuestions, emptyAnswers, type Answers } from '../src/general/questions';
 import { moneyOwed } from '../src/reports/owed';
 
 const options = { businessId: 'test', file: 'my-invoices.csv' };
@@ -288,5 +288,57 @@ describe('one name, two customers', () => {
     expect(new Set(result.records.map((r) => r.customerName))).toEqual(
       new Set(['David Braithwaite', 'Grace Holt']),
     );
+  });
+});
+
+describe('amounts in notes', () => {
+  const noteHeader = 'Ref,When,Customer,Total,Paid?,Notes';
+  const table = readSheet(
+    [
+      noteHeader,
+      'A1,15/03/2026,Ann,120.00,Yes,',
+      'A2,16/03/2026,Bob,2160.00,part,£1000 paid towards the rewire',
+      'A3,17/03/2026,Cat,60.00,No,',
+    ].join('\n'),
+  );
+  const answers = {
+    ...emptyAnswers(),
+    columns: {
+      invoiceNumber: 'Ref',
+      date: 'When',
+      customer: 'Customer',
+      net: null,
+      vat: null,
+      gross: 'Total',
+      status: 'Paid?',
+    },
+    status,
+  };
+
+  it('asks about the amount in the note of a part-paid invoice', () => {
+    const questions = askQuestions(table, answers).filter((q) => q.kind === 'note-amount');
+    expect(questions).toHaveLength(1);
+    expect(questions[0]).toMatchObject({ id: 'paid:3', row: 3 });
+  });
+
+  it('uses it once accepted, and counts the rest as owed', () => {
+    const result = convertSpreadsheet(
+      table,
+      { ...answers, repairs: { 'paid:3': 'accept' } },
+      options,
+    );
+    const invoice = result.records[1];
+    expect(invoice?.paidPence).toEqual({
+      origin: 'derived',
+      value: 100000,
+      rule: 'you confirmed the note "£1000 paid towards the rewire" means £1,000.00 paid',
+    });
+    expect(invoice?.duePence.value).toBe(116000);
+    expect(moneyOwed(result.records, '2026-04-01').owedPence).toBe(116000 + 6000);
+  });
+
+  it('leaves the amount owed unknown when not accepted', () => {
+    const result = convertSpreadsheet(table, answers, options);
+    expect(result.records[1]?.duePence.value).toBeNull();
   });
 });

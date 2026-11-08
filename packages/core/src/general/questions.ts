@@ -2,7 +2,9 @@ import type { CsvTable } from '../csv';
 import { readDate, readDayMonth, type DateOrder } from '../dates';
 import { scanColumn } from '../scan';
 import { findNameMatches, findNameSplits, type NameMatch, type NameSplit } from '../names';
-import { applyRepairs, findRepairs, type Repair } from '../repairs';
+import { applyRepairs, findRepairs, kindOf, type Repair } from '../repairs';
+import { parseMoney } from '../money';
+import { readNoteAmount, type NoteAmount } from '../note-amounts';
 import { readStatus } from '../status';
 import { FIELDS, suggestColumns, type Field } from '../suggest';
 
@@ -51,7 +53,9 @@ export type Question =
   | { kind: 'repair'; repair: Repair }
   // never blocks converting either: unanswered names are kept apart
   | { kind: 'same-customer'; match: NameMatch }
-  | { kind: 'split-customer'; split: NameSplit };
+  | { kind: 'split-customer'; split: NameSplit }
+  // the amount paid on a part-paid invoice, read from a note; answered in answers.repairs
+  | { kind: 'note-amount'; id: string; row: number; amount: NoteAmount };
 
 export const REQUIRED_FIELDS: Field[] = ['invoiceNumber', 'customer', 'gross'];
 
@@ -151,6 +155,11 @@ export function askQuestions(table: CsvTable, answers: Answers): Question[] {
     for (const match of findNameMatches(repaired, customerColumn)) {
       if (!(match.id in answers.names)) questions.push({ kind: 'same-customer', match });
     }
+    // amounts written in notes, for invoices the user said are part paid
+    for (const found of noteAmounts(table, answers)) {
+      if (!(found.id in answers.repairs)) questions.push({ kind: 'note-amount', ...found });
+    }
+
     // two customers under one name, worked out after the merges the user accepted
     for (const split of findNameSplits(
       mergedTable(repaired, customerColumn, answers),
@@ -253,4 +262,38 @@ export function mergedTable(table: CsvTable, customerColumn: string, answers: An
         : row;
     }),
   };
+}
+
+// For each part-paid invoice, the amount its notes give, if they give exactly one. Notes
+// are the status cell and any cell of plain text in a column not used for another field.
+export function noteAmounts(
+  table: CsvTable,
+  answers: Answers,
+): { id: string; row: number; amount: NoteAmount }[] {
+  const { status: statusColumn, gross: grossColumn } = answers.columns;
+  if (!statusColumn || !grossColumn) return [];
+  const used = new Set(Object.values(answers.columns).filter((h): h is string => !!h));
+  const repaired = repairedTable(table, answers).table;
+  const found: { id: string; row: number; amount: NoteAmount }[] = [];
+  repaired.rows.forEach((row, index) => {
+    if (answers.status[statusKey(row[statusColumn] ?? null)] !== 'part paid') return;
+    const gross = parseMoney(row[grossColumn] ?? '');
+    if (gross === null || gross <= 0) return;
+    const notes = [
+      row[statusColumn],
+      ...repaired.headers
+        .filter((h) => !used.has(h))
+        .map((h) => row[h])
+        .filter((v) => v && kindOf(v) === null && /[a-z]/i.test(v)),
+    ].filter((v): v is string => !!v);
+    const readings = notes
+      .map((note) => readNoteAmount(note, gross))
+      .filter((r): r is NoteAmount => r !== null);
+    const [first] = readings;
+    // notes that disagree can't be used
+    if (!first || readings.some((r) => r.paidPence !== first.paidPence)) return;
+    const rowNumber = repaired.rowNumbers[index] ?? index + 2;
+    found.push({ id: `paid:${rowNumber}`, row: rowNumber, amount: first });
+  });
+  return found;
 }
