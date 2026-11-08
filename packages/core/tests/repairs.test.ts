@@ -84,6 +84,54 @@ describe('swapped values', () => {
   });
 });
 
+describe('a value swapped with plain text', () => {
+  it("swaps an email and a name typed into each other's columns", () => {
+    const repairs = findRepairs(
+      sheet('A6,fay@example.com,07700 900106,Fay Example,OL1 9CC,10.00,2.00,12.00'),
+    );
+    expect(repairs.map((r) => [r.action, r.from, r.to])).toEqual([['swap', 'Customer', 'Email']]);
+    expect(repairs[0]?.evidence[0]).toContain('which is not an email address. They look swapped.');
+  });
+
+  it('swaps a phone and a name', () => {
+    expect(
+      summary(sheet('A6,07700 900106,Fay Example,fay@example.com,OL1 9CC,10.00,2.00,12.00')),
+    ).toEqual(['swap Customer -> Phone']);
+  });
+
+  it('does not swap when the other cell is not text', () => {
+    // the email column holds a number, which proves nothing about the customer column
+    expect(summary(sheet('A6,fay@example.com,07700 900106,123,OL1 9CC,10.00,2.00,12.00'))).toEqual(
+      [],
+    );
+  });
+});
+
+describe('money swapped between columns', () => {
+  it('swaps a net and a total once the sum shows it', () => {
+    const repairs = findRepairs(
+      sheet('A6,Fay Example,07700 900106,fay@example.com,OL1 9CC,456.00,76.00,380.00'),
+    );
+    expect(repairs.map((r) => [r.action, r.from, r.to])).toEqual([['swap', 'Net', 'Total']]);
+    expect(repairs[0]?.evidence).toEqual([
+      'Row 7: Net + VAT should equal Total, as on 5 other rows, but £456.00 + £76.00 is not £380.00.',
+      'With Net and Total swapped, it adds up.',
+    ]);
+  });
+
+  it('leaves a row that just does not add up as a flag, with no swap', () => {
+    expect(
+      summary(sheet('A6,Fay Example,07700 900106,fay@example.com,OL1 9CC,450.00,90.00,560.00')),
+    ).toEqual([]);
+  });
+
+  it('leaves a VAT-inclusive row alone', () => {
+    expect(
+      summary(sheet('A6,Fay Example,07700 900106,fay@example.com,OL1 9CC,120.00,20.00,120.00')),
+    ).toEqual([]);
+  });
+});
+
 describe('copies', () => {
   it('removes a copy of the email from the phone column', () => {
     expect(

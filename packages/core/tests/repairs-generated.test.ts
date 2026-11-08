@@ -22,7 +22,13 @@ const AREAS = ['WN1 2AB', 'M4 1NP', 'BL3 6YZ', 'SK1 7AA', 'WA1 2EE', 'OL1 9CC', 
 const PEOPLE = ['Ann Example', 'Bob Example', 'Cat Example', 'Dan Example', 'Eve Example'];
 const JOBS = ['Boiler service', 'Fit tap', 'Leak repair', 'Rewire', 'New radiator'];
 
-type Mistake = 'move-money' | 'move-email' | 'swap-phone-postcode' | 'copy-email';
+type Mistake =
+  | 'move-money'
+  | 'move-email'
+  | 'swap-phone-postcode'
+  | 'copy-email'
+  | 'swap-email-name'
+  | 'swap-net-total';
 
 function build(seed: number) {
   const r = random(seed);
@@ -72,6 +78,8 @@ function build(seed: number) {
       'move-email',
       'swap-phone-postcode',
       'copy-email',
+      'swap-email-name',
+      'swap-net-total',
     ]);
     if (mistake === 'move-money') {
       // the net typed into the phone column, with £ so it says what it is
@@ -85,6 +93,12 @@ function build(seed: number) {
     } else if (mistake === 'swap-phone-postcode') {
       [row[at('Phone')], row[at('Postcode')]] = [row[at('Postcode')] ?? '', row[at('Phone')] ?? ''];
       expected.push(`swap:${sheetRow}:Phone:Postcode`);
+    } else if (mistake === 'swap-email-name' && row[at('Email')]) {
+      [row[at('Customer')], row[at('Email')]] = [row[at('Email')] ?? '', row[at('Customer')] ?? ''];
+      expected.push(`swap:${sheetRow}:Customer:Email`);
+    } else if (mistake === 'swap-net-total') {
+      [row[at('Net')], row[at('Total')]] = [row[at('Total')] ?? '', row[at('Net')] ?? ''];
+      expected.push(`swap:${sheetRow}:Net:Total`);
     } else if (mistake === 'copy-email' && row[at('Email')]) {
       row[at('Phone')] = row[at('Email')] ?? '';
       expected.push(`remove-copy:${sheetRow}:Phone`);

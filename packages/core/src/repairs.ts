@@ -133,12 +133,13 @@ export function findRepairs(table: CsvTable): Repair[] {
       if (used.has(header)) continue;
       const label = `${WORDS[kind]} (${value})`;
 
-      // swapped: the home holds a value that belongs here
+      // swapped: the home holds a value that belongs here. Plain text (a name) only goes
+      // back into a text column, as half of a swap the other value proves
       const swap = homes.find((home) => {
         const there = cell(home.header);
-        return (
-          there !== null && !used.has(home.header) && ownKind !== null && kindOf(there) === ownKind
-        );
+        if (there === null || used.has(home.header)) return false;
+        if (ownKind !== null) return kindOf(there) === ownKind;
+        return kindOf(there) === null && /[a-z]/i.test(there);
       });
       if (swap) {
         const there = cell(swap.header) ?? '';
@@ -152,7 +153,9 @@ export function findRepairs(table: CsvTable): Repair[] {
           other: there,
           group: `swap ${header} and ${swap.header}`,
           evidence: [
-            `Row ${rowNumber}: "${header}" has ${label} and "${swap.header}" has ${WORDS[ownKind ?? kind]} (${there}). Each fits the other column.`,
+            ownKind
+              ? `Row ${rowNumber}: "${header}" has ${label} and "${swap.header}" has ${WORDS[ownKind]} (${there}). Each fits the other column.`
+              : `Row ${rowNumber}: "${header}" has ${label} and "${swap.header}" has "${there}", which is not ${WORDS[kind]}. They look swapped.`,
           ],
         });
         used.add(header);
@@ -185,7 +188,77 @@ export function findRepairs(table: CsvTable): Repair[] {
       used.add(header);
     }
   });
+  repairs.push(...moneySwaps(table, columns, repairs));
   return repairs;
+}
+
+// Two money cells swapped on a row (net and total, say) look fine one by one; only the
+// sum shows it. Find the sum that holds on most rows, and on a row where it fails, try
+// swapping two of its cells. Suggest the swap only if it makes the sum hold.
+function moneySwaps(
+  table: CsvTable,
+  columns: { header: string; kind: Kind | null }[],
+  found: Repair[],
+): Repair[] {
+  const money = columns.filter((c) => c.kind === 'money').map((c) => c.header);
+  const amount = (row: Record<string, string | null>, header: string) =>
+    parseMoney(row[header] ?? '');
+  const holds = (x: number | null, y: number | null, z: number | null) =>
+    x !== null && y !== null && z !== null && x !== 0 && y !== 0 && Math.abs(x + y - z) <= 1;
+
+  // the sum a + b = c that holds on most rows with all three filled
+  let best: { a: string; b: string; c: string; rows: number } | null = null;
+  for (const c of money) {
+    for (const a of money) {
+      for (const b of money) {
+        if (a >= b || a === c || b === c) continue;
+        const filled = table.rows.filter((row) => [a, b, c].every((h) => amount(row, h) !== null));
+        const good = filled.filter((row) => holds(amount(row, a), amount(row, b), amount(row, c)));
+        if (
+          filled.length >= 4 &&
+          good.length / filled.length >= 0.6 &&
+          good.length > (best?.rows ?? 0)
+        ) {
+          best = { a, b, c, rows: good.length };
+        }
+      }
+    }
+  }
+  if (!best) return [];
+  const { a, b, c, rows: agreeing } = best;
+  const busy = new Set(found.flatMap((r) => [`${r.row}:${r.from}`, `${r.row}:${r.to}`]));
+
+  const swaps: Repair[] = [];
+  table.rows.forEach((row, index) => {
+    const rowNumber = table.rowNumbers[index] ?? index + 2;
+    const [x, y, z] = [amount(row, a), amount(row, b), amount(row, c)];
+    if (x === null || y === null || z === null || holds(x, y, z)) return;
+    if ([a, b, c].some((h) => busy.has(`${rowNumber}:${h}`))) return;
+    // a + b is the same either way round, so only a swap with the total can help
+    const tries: [string, string, boolean][] = [
+      [a, c, holds(z, y, x)],
+      [b, c, holds(x, z, y)],
+    ];
+    const fixes = tries.filter(([, , ok]) => ok);
+    const [fix] = fixes;
+    if (fixes.length !== 1 || !fix) return;
+    const [from, to] = fix;
+    swaps.push({
+      id: `swap:${rowNumber}:${from}:${to}`,
+      action: 'swap',
+      row: rowNumber,
+      from,
+      to,
+      value: row[from] ?? '',
+      other: row[to] ?? '',
+      group: `swap ${from} and ${to}`,
+      evidence: [
+        `Row ${rowNumber}: ${a} + ${b} should equal ${c}, as on ${agreeing} other rows, but ${pounds(x)} + ${pounds(y)} is not ${pounds(z)}.`,
+        `With ${from} and ${to} swapped, it adds up.`,
+      ],
+    });
+  });
+  return swaps;
 }
 
 // With the amount moved, do two money columns on the row add up to a third?

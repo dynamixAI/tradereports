@@ -30,7 +30,9 @@ TradeReports **proposes** repairs. It never applies one without the user's confi
    from Phone to Net on row 13").
 3. **Only values that identify themselves are moved.** An email, a UK phone number, a UK
    postcode, an amount with £ or pence, and a date can be recognised wherever they are. Free
-   text (names, job descriptions) cannot, so it is never moved.
+   text (names, job descriptions) cannot, so it is never moved on its own. It can only go back
+   into a text column as half of a swap, when the other half identifies itself (an email in
+   the customer column, with the customer's name in the email column).
 4. **Similar repairs can be confirmed together** ("14 names have extra spaces: tidy all /
    review each / leave"). **Name typos are always confirmed one at a time**, as each one is a
    judgement about whether two customers are the same person.
@@ -39,16 +41,17 @@ TradeReports **proposes** repairs. It never applies one without the user's confi
 
 ### Kinds of repair
 
-| Kind                   | What is spotted                                                                             | What is proposed                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Misplaced value        | A cell whose kind does not fit its column but fits another column that is empty on that row | Move it there                                                                               |
-| Swapped values         | Two cells on a row that each fit the other's column                                         | Swap them                                                                                   |
-| Duplicate value        | The same email or phone in two columns of a row, one of them the right column               | Remove the copy, and look along the row for what belongs in the emptied cell                |
-| Shifted row            | Several cells in a row that each fit the column next to theirs                              | Shift the row back by one                                                                   |
-| Tidy text              | Extra spaces, different capitals, curly apostrophes, "Mr." against "Mr"                     | Use the tidy form when comparing; change the value only if the user accepts                 |
-| Possible same customer | Names that differ by symbols or a small typo                                                | Treat as one customer, if the user says so                                                  |
-| Amount in a note       | "£1,000 paid" in a status or notes cell of a part-paid invoice                              | Use it as the amount paid                                                                   |
-| Conflicts              | Duplicate invoice numbers; net + VAT not equal to the total                                 | Flag only, with choices (keep both / renumber; which figure is right). Never fixed silently |
+| Kind                   | What is spotted                                                                                                    | What is proposed                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Misplaced value        | A cell whose kind does not fit its column but fits another column that is empty on that row                        | Move it there                                                                               |
+| Swapped values         | Two cells on a row that each fit the other's column, or a self-identifying value swapped with text                 | Swap them                                                                                   |
+| Swapped amounts        | A row where the sum that holds on most rows (net + VAT = total) fails, and swapping two of its cells makes it hold | Swap them                                                                                   |
+| Duplicate value        | The same email or phone in two columns of a row, one of them the right column                                      | Remove the copy, and look along the row for what belongs in the emptied cell                |
+| Shifted row            | Several cells in a row that each fit the column next to theirs                                                     | Shift the row back by one                                                                   |
+| Tidy text              | Extra spaces, different capitals, curly apostrophes, "Mr." against "Mr"                                            | Use the tidy form when comparing; change the value only if the user accepts                 |
+| Possible same customer | Names that differ by symbols or a small typo                                                                       | Treat as one customer, if the user says so                                                  |
+| Amount in a note       | "£1,000 paid" in a status or notes cell of a part-paid invoice                                                     | Use it as the amount paid                                                                   |
+| Conflicts              | Duplicate invoice numbers; net + VAT not equal to the total                                                        | Flag only, with choices (keep both / renumber; which figure is right). Never fixed silently |
 
 ### Spotting possible same customers
 
