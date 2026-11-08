@@ -237,7 +237,14 @@ export function suggestColumns(table: CsvTable): Suggestions {
     // that repeat (SET, DUE, PD), whose meaning the user gives
     const statusShare = statusWords(cells);
     const codes = shortCodes(cells);
-    if (statusShare >= 0.5 || codes) {
+    // a few repeated words (HONOURED, OPEN, OVERDUE) count when the header names a status
+    // or one of them reads as paid or unpaid; otherwise "Area: Wigan, Leigh" would too
+    const labels =
+      !codes &&
+      fewLabels(cells) &&
+      (nameScore(header, 'status') > 0 ||
+        cells.some((c) => ['paid', 'unpaid', 'part paid'].includes(readStatus(c) ?? '')));
+    if (statusShare >= 0.5 || codes || labels) {
       const methods = cells.filter((c) => readStatus(c) === 'method').length;
       const evidence = [...name('status')];
       if (statusShare >= 0.5)
@@ -250,7 +257,12 @@ export function suggestColumns(table: CsvTable): Suggestions {
         evidence.push(
           `A few short codes that repeat (${[...new Set(cells)].slice(0, 4).join(', ')}), like a status. You'll be asked what each means.`,
         );
-      const score = nameScore(header, 'status') + 2 * statusWords(cells, true) + (codes ? 0.5 : 0);
+      if (labels)
+        evidence.push(
+          `A few repeated words (${[...new Set(cells)].slice(0, 4).join(', ')}), like a status. You'll be asked what each means.`,
+        );
+      const score =
+        nameScore(header, 'status') + 2 * statusWords(cells, true) + (codes || labels ? 0.5 : 0);
       add('status', header, score, evidence);
     }
 
@@ -311,7 +323,8 @@ export function suggestColumns(table: CsvTable): Suggestions {
       const [first, second] = open;
       const tie =
         first !== undefined && second !== undefined && Math.abs(first.score - second.score) < 0.01;
-      const best = first && !tie ? first.header : null;
+      // a column with no positive evidence is listed as an option, never suggested
+      const best = first && !tie && first.score > 0 ? first.header : null;
       if (best) {
         taken.add(best);
         changed = true;
@@ -445,6 +458,24 @@ function shortCodes(cells: string[]): boolean {
     // codes we can't read; known payment methods (Bank, Cash) say how, not whether
     [...distinct].every(
       (c) => [...c].length <= 4 && !/^\d+([.,]\d+)?$/.test(c) && readStatus(c) !== 'method',
+    )
+  );
+}
+
+// 2 to 8 different values of one or two short words, repeating, and not payment methods
+function fewLabels(cells: string[]): boolean {
+  const distinct = new Set(cells.map((c) => c.trim()));
+  return (
+    cells.length >= 4 &&
+    distinct.size >= 2 &&
+    distinct.size <= 8 &&
+    distinct.size < cells.length &&
+    [...distinct].every(
+      (c) =>
+        c.length <= 12 &&
+        c.split(/\s+/).length <= 2 &&
+        /[a-z]/i.test(c) &&
+        readStatus(c) !== 'method',
     )
   );
 }

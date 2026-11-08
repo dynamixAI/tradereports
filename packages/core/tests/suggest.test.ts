@@ -224,6 +224,48 @@ describe('status as codes, ticks or long notes', () => {
   });
 });
 
+describe('status as a few repeated words', () => {
+  const sheet = (statusHeader: string, values: string[]) =>
+    [
+      `Ref,Customer,Amount,${statusHeader}`,
+      ...values.map((v, i) => `X${i},Customer ${'ABCDEFGH'[i] ?? ''},${(60 + i).toFixed(2)},${v}`),
+    ].join('\n');
+
+  it('takes them when the header names a status', () => {
+    const status = suggest(sheet('Cleared?', ['SORTED', 'WAITING', 'SORTED', 'WAITING', 'SORTED']))
+      .fields.status;
+    expect(status.best).toBe('Cleared?');
+    expect(status.candidates[0]?.evidence.join(' ')).toContain("You'll be asked what each means.");
+  });
+
+  it('takes them when one of the words reads as paid or unpaid', () => {
+    expect(
+      best(sheet('Flag', ['SORTED', 'OVERDUE', 'SORTED', 'WAITING', 'SORTED']), 'status'),
+    ).toBe('Flag');
+  });
+
+  it('does not take a column of place names as the status', () => {
+    expect(
+      best(sheet('Area', ['Wigan', 'Leigh', 'Wigan', 'Hindley', 'Leigh']), 'status'),
+    ).toBeNull();
+  });
+});
+
+describe('no positive evidence', () => {
+  it('lists a payment method column as an option but never suggests it', () => {
+    const sheet = [
+      'Ref,Customer,Amount,Method',
+      'X1,Ann,10.00,Cash',
+      'X2,Bob,20.00,BACS',
+      'X3,Cat,30.00,Cash',
+      'X4,Dan,40.00,Cheque',
+    ].join('\n');
+    const status = suggest(sheet).fields.status;
+    expect(status.best).toBeNull();
+    expect(status.candidates.map((c) => c.header)).toContain('Method');
+  });
+});
+
 describe('customer names and codes', () => {
   it('does not offer a column of codes as the customer', () => {
     const sheet = [
