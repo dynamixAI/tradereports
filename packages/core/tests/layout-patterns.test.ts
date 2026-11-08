@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readYesNo } from '../src/clean';
 import { readDate } from '../src/dates';
-import { readSheet } from '../src/layout';
+import { findHeaderRow, readSheet } from '../src/layout';
 import { scanColumn } from '../src/scan';
 
 // Each pattern gets several variants, written from scratch, so the rules are tested in
@@ -25,6 +25,37 @@ describe('notes under the data', () => {
     const result = sheet(...extra);
     expect(refs(result)).toEqual(['A1', 'A2', 'A3']);
     expect(result.issues.some((issue) => issue.message.includes('looks like a note'))).toBe(true);
+  });
+});
+
+describe('a heading straight under the headers', () => {
+  const titled = (...under: string[]) =>
+    ['Sales book 2026', 'Kept by me', '', header, ...under, ...rows].join('\n');
+
+  it.each([
+    ['a month name', 'JANUARY'],
+    ['a month and year', 'January 2026'],
+    ['a note in a middle column', ',,,first jobs after Christmas,,,,'],
+    ['two short lines', 'JANUARY', 'quiet month'],
+  ])('still finds the headers with %s under them', (_name, ...under) => {
+    const text = titled(...under);
+    expect(findHeaderRow(text)).toBe(4);
+    expect(refs(readSheet(text))).toEqual(['A1', 'A2', 'A3']);
+  });
+
+  it('takes the lower row of a two-row header', () => {
+    const text = [',,,,Money,,,', header, ...rows].join('\n');
+    expect(findHeaderRow(text)).toBe(2);
+  });
+
+  it('takes the lower row when two full rows of labels sit on top of each other', () => {
+    const text = ['Number,When,Who,What,Before,Tax,After,Done', header, ...rows].join('\n');
+    expect(findHeaderRow(text)).toBe(2);
+  });
+
+  it('falls back to the widest row, not a one-cell title, when nothing looks like headers', () => {
+    const text = ['My jobs', '1,2,3,4', '5,6,7,8'].join('\n');
+    expect(findHeaderRow(text)).toBe(2);
   });
 });
 

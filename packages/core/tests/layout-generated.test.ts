@@ -87,6 +87,9 @@ function makeLayout(seed: number): Layout {
   if (lines.length > 0 && r.next() < 0.6) lines.push(blankRow);
   const headerRow = lines.length + 1;
   lines.push(columns.join(','));
+  // sometimes a month heading or a note straight under the headers
+  if (r.next() < 0.2) lines.push(cellsAt({ 0: r.pick(['JANUARY', 'April 2026', 'Q1']) }));
+  else if (r.next() < 0.1) lines.push(cellsAt({ [r.int(1, width - 1)]: r.pick(NOTES) }));
 
   const refs: string[] = [];
   let totalAmount = 0;

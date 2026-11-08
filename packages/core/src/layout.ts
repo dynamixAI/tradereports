@@ -52,20 +52,36 @@ export function findHeaderRow(text: string): number {
   const rows = rawRows(text).slice(0, SEARCH_ROWS);
   const widest = Math.max(0, ...rows.map(({ cells }) => filledCells(cells).length));
 
+  const wide = (cells: string[]) => filledCells(cells).length >= widest * 0.5;
+  const allLabels = (cells: string[]) => filledCells(cells).every(isLabel);
+
   for (let i = 0; i < rows.length; i += 1) {
     const current = rows[i];
-    const next = rows[i + 1];
-    if (!current || !next) break;
+    if (!current) break;
     const filled = filledCells(current.cells);
-    if (filled.length < 2 || filled.length < widest * 0.5) continue;
+    if (filled.length < 2 || !wide(current.cells)) continue;
     const labels = filled.filter(isLabel).length;
     if (labels / filled.length < 0.8) continue;
-    // the row below should hold values, not more labels
-    const below = filledCells(next.cells);
-    if (below.length === 0 || below.filter(isLabel).length === below.length) continue;
-    return current.row;
+    if (hasValuesBelow(rows.slice(i + 1), wide, allLabels)) return current.row;
   }
-  return rows.find(({ cells }) => filledCells(cells).length > 0)?.row ?? 1;
+  // no clear header: the widest row near the top beats a one-cell title
+  const fallback = rows.find(({ cells }) => filledCells(cells).length === widest);
+  return fallback?.row ?? 1;
+}
+
+// Values should follow the headers. A short line of words straight under them (a month
+// heading, a note) is skipped over; a second wide row of labels means the headers are
+// further down, so the current row is a title or the top half of a two-row header.
+function hasValuesBelow(
+  below: { cells: string[] }[],
+  wide: (cells: string[]) => boolean,
+  allLabels: (cells: string[]) => boolean,
+): boolean {
+  for (const { cells } of below.slice(0, 3)) {
+    if (!allLabels(cells)) return true;
+    if (wide(cells)) return false;
+  }
+  return false;
 }
 
 // A blank header with nothing under it is a gap someone left for neatness.
