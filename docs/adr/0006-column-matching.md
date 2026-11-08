@@ -1,6 +1,6 @@
 # ADR 0006: Column matching for unknown files
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 8 November 2026
 
 ## Context
