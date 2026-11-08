@@ -13,6 +13,8 @@ export interface Profile {
   answers: Answers;
   // YYYY-MM-DD, passed in so tests always give the same profile
   savedOn: string;
+  // for a workbook with several sheets, the one the user chose
+  sheet?: string;
 }
 
 export type ProfileMatch =
@@ -31,8 +33,19 @@ export function makeProfile(
   table: CsvTable,
   answers: Answers,
   savedOn: string,
+  sheet?: string,
 ): Profile {
-  return { version: 1, name, headers: [...table.headers], answers, savedOn };
+  const profile: Profile = { version: 1, name, headers: [...table.headers], answers, savedOn };
+  return sheet === undefined ? profile : { ...profile, sheet };
+}
+
+// When a workbook asks which sheet to read, the sheet a saved profile chose before, if
+// this workbook has it. The newest profile wins.
+export function rememberedSheet(sheetNames: string[], profiles: Profile[]): string | undefined {
+  return [...profiles]
+    .sort((a, b) => b.savedOn.localeCompare(a.savedOn))
+    .map((p) => p.sheet)
+    .find((sheet) => sheet !== undefined && sheetNames.includes(sheet));
 }
 
 // The saved profile this sheet belongs to: an exact match first, then the most similar.

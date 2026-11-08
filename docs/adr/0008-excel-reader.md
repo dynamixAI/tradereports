@@ -61,6 +61,8 @@ How it is used:
 - Dependabot cannot update a vendored tarball, so upgrades are done by hand: check the SheetJS
   release notes, replace the tarball, and run the full test suite. That suits a pinned,
   security-sensitive dependency anyway.
-- The tarball adds around 1 MB to the repository.
+- The tarball adds 2.3 MB to the repository.
+- SheetJS does not pass on which sheets are hidden in .ods files (it does for .xlsx and .xls),
+  so a hidden .ods sheet with data is offered as a choice rather than skipped.
 - Tests use real .xlsx, .xls and .ods files made in LibreOffice from our regression fixtures, so
   the same answers must come out of a spreadsheet as out of its CSV.
