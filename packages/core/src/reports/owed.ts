@@ -1,5 +1,6 @@
 import { pounds } from '../invoice-checks';
-import type { Invoice } from '../model';
+import type { Linked } from '../link';
+import type { Customer, Invoice, Known } from '../model';
 
 export type AgeBand =
   | 'not yet due'
@@ -20,6 +21,12 @@ const BANDS: AgeBand[] = [
 
 export interface CustomerOwed {
   customer: string;
+  contactName: string | null;
+  // from the customers file, so the list can be used to chase payment
+  phones: string[];
+  emails: string[];
+  // set when the name on the invoices can't be pinned to one customer
+  warning: string | null;
   owedPence: number;
   overduePence: number;
   // invoice numbers, so the user can check each figure against their file
@@ -54,7 +61,11 @@ export interface OwedReport {
 }
 
 // Who owes the business money, as of a given day, from checked invoices.
-export function moneyOwed(invoices: Invoice[], asOf: string): OwedReport {
+// Pass the linked records to group by customer record and add contact details.
+export function moneyOwed(invoices: Invoice[], asOf: string, linked?: Linked): OwedReport {
+  const customerOf = new Map<string, Known<Customer>>(
+    (linked?.invoices ?? []).map((item) => [item.invoice.number, item.customer]),
+  );
   const counted: Invoice[] = [];
   const drafts: Invoice[] = [];
   const unknownStatus: Invoice[] = [];
@@ -116,6 +127,12 @@ export function moneyOwed(invoices: Invoice[], asOf: string): OwedReport {
       `${pounds(unsentPence)} of this is on ${unsent.length} ${plural(unsent.length, 'invoice')} that ${unsent.length === 1 ? 'was' : 'were'} never sent, so ${unsent.length === 1 ? 'it' : 'they'} may be drafts. If so, you're owed ${pounds(owedPence - unsentPence)}.`,
     );
   }
+  const shared = byCustomer(counted, customerOf).filter((customer) => customer.warning !== null);
+  if (shared.length > 0) {
+    summary.push(
+      `${shared.length} ${shared.length === 1 ? 'name is' : 'names are'} shared by more than one customer, so ${shared.length === 1 ? 'its total' : 'their totals'} may combine different people.`,
+    );
+  }
   for (const item of leftOut) {
     summary.push(
       `Left out: ${item.invoices.length} ${plural(item.invoices.length, 'invoice')} (${pounds(item.pence)}) with ${item.reason}.`,
@@ -128,7 +145,7 @@ export function moneyOwed(invoices: Invoice[], asOf: string): OwedReport {
     overduePence,
     owedIfUnsentAreDraftsPence: owedPence - unsentPence,
     invoices: numbers(counted),
-    byCustomer: byCustomer(counted),
+    byCustomer: byCustomer(counted, customerOf),
     byAge: byAge(counted, asOf),
     leftOut,
     summary,
@@ -136,12 +153,22 @@ export function moneyOwed(invoices: Invoice[], asOf: string): OwedReport {
 }
 
 // biggest debt first; ties by name so the order never changes between runs
-function byCustomer(invoices: Invoice[]): CustomerOwed[] {
+function byCustomer(invoices: Invoice[], customerOf: Map<string, Known<Customer>>): CustomerOwed[] {
   const groups = new Map<string, CustomerOwed>();
   for (const invoice of invoices) {
-    const name = invoice.customerName ?? 'No customer name';
-    const group = groups.get(name) ?? {
-      customer: name,
+    const match = customerOf.get(invoice.number);
+    const record = match?.value ?? null;
+    // a matched customer groups by its own ID; otherwise fall back to the invoice's name
+    const key = record
+      ? `id:${record.sourceId ?? record.name}`
+      : `name:${invoice.customerName ?? ''}`;
+    const sharedName = match?.origin === 'unknown' && match.reason.includes('customers are called');
+    const group = groups.get(key) ?? {
+      customer: record?.name ?? invoice.customerName ?? 'No customer name',
+      contactName: record?.contactName ?? null,
+      phones: record?.phones.map((phone) => phone.number) ?? [],
+      emails: record?.emails ?? [],
+      warning: sharedName ? `${match.reason}, so this total may combine them` : null,
       owedPence: 0,
       overduePence: 0,
       invoices: [],
@@ -157,7 +184,7 @@ function byCustomer(invoices: Invoice[]): CustomerOwed[] {
     ) {
       group.oldestDueDate = invoice.dueDate;
     }
-    groups.set(name, group);
+    groups.set(key, group);
   }
   return [...groups.values()].sort(
     (a, b) => b.owedPence - a.owedPence || a.customer.localeCompare(b.customer),

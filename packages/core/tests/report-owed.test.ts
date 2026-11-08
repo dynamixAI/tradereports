@@ -2,6 +2,9 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { readCsv } from '../src/csv';
 import { pounds } from '../src/invoice-checks';
+import { convertJobberClients } from '../src/jobber/clients';
+import { linkRecords } from '../src/link';
+import { convertTradifyCustomers } from '../src/tradify/customers';
 import { convertInvoiceFile } from '../src/invoices';
 import { derived, stated, unknown, type Invoice } from '../src/model';
 import { moneyOwed } from '../src/reports/owed';
@@ -143,5 +146,63 @@ describe('pounds', () => {
     expect(pounds(1950600)).toBe('£19,506.00');
     expect(pounds(5)).toBe('£0.05');
     expect(pounds(-12345)).toBe('-£123.45');
+  });
+});
+
+describe('moneyOwed with linked customers', () => {
+  const base = { businessId: 'test-business', file: 'test.csv' };
+  const linkedFor = (customersPath: string, invoicesPath: string, tool: 'jobber' | 'tradify') => {
+    const read = (path: string) =>
+      readCsv(readFileSync(new URL(`./fixtures/${path}`, import.meta.url), 'utf8'));
+    const customers =
+      tool === 'jobber'
+        ? convertJobberClients(read(customersPath), base).records
+        : convertTradifyCustomers(read(customersPath), base).records;
+    const invoices = convertInvoiceFile(read(invoicesPath), { ...base, today: asOf }).records;
+    const linked = linkRecords({ customers, quotes: [], jobs: [], invoices });
+    return moneyOwed(invoices, asOf, linked);
+  };
+
+  it('adds contact details to each debtor', () => {
+    const top = linkedFor('jobber/clients-export.csv', 'jobber/invoices-report.csv', 'jobber')
+      .byCustomer[0];
+    expect(top).toEqual(
+      expect.objectContaining({
+        customer: 'Noah Fiction',
+        contactName: 'Noah Fiction',
+        phones: ['07700900014'],
+        emails: ['noah@example.com'],
+        warning: null,
+      }),
+    );
+  });
+
+  it('groups by the customer record, not the name typed on the invoice', () => {
+    const groups = linkedFor(
+      'tradify/customers-export.csv',
+      'tradify/invoices-export.csv',
+      'tradify',
+    ).byCustomer.map((c) => [c.customer, c.contactName, c.owedPence]);
+    expect(groups).toEqual([
+      ['Fauxname', 'Bella', 18999],
+      ['Fake', 'Emma', 9400],
+      ['Test', 'Alice', 6750],
+    ]);
+  });
+
+  it('warns when a name belongs to more than one customer', () => {
+    const customers = convertTradifyCustomers(
+      readCsv('Customer Name,Tradify Id\nSmith,a1\nSmith,a2\n'),
+      base,
+    ).records;
+    const invoices = [invoice({ number: 'A', customerName: 'Smith' })];
+    const linked = linkRecords({ customers, quotes: [], jobs: [], invoices });
+    const report = moneyOwed(invoices, asOf, linked);
+    expect(report.byCustomer[0]?.warning).toBe(
+      '2 customers are called "Smith", so this total may combine them',
+    );
+    expect(report.summary).toContain(
+      '1 name is shared by more than one customer, so its total may combine different people.',
+    );
   });
 });
