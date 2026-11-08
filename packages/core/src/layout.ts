@@ -3,6 +3,7 @@ import { readCsv, type CsvIssue, type CsvRow, type CsvTable } from './csv';
 import { readDate } from './dates';
 import { pounds } from './invoice-checks';
 import { parseMoney } from './money';
+import { countsUp } from './scan';
 
 // how far down to look for the header row
 const SEARCH_ROWS = 20;
@@ -125,8 +126,10 @@ function dropSpacerColumns(table: CsvTable, notes: CsvIssue[]): CsvTable {
 function dropTotalRows(table: CsvTable, notes: CsvIssue[]): CsvTable {
   const moneyColumns = table.headers.filter((header) => {
     const values = table.rows.map((row) => row[header]).filter((v): v is string => v !== null);
+    // a column that counts up (1, 2, 3) adds up by chance, so it proves nothing
     return (
       values.length > 0 &&
+      !countsUp(values) &&
       values.filter((v) => parseMoney(v) !== null && readDate(v) === null).length / values.length >=
         0.9
     );

@@ -122,6 +122,13 @@ describe('total rows', () => {
     expect(refs(result)).toEqual(['A1', 'A2', 'A3', 'A4']);
   });
 
+  it('does not take a counter column adding up (1 + 2 = 3) as a total', () => {
+    const result = readSheet(
+      ['No,Who,Amount', '1,Ann,120.00', '2,Bob,96.50', '3,Cat,72.25'].join('\n'),
+    );
+    expect(result.rows).toHaveLength(3);
+  });
+
   it('keeps a job whose description starts with Total', () => {
     const result = sheet('A4,2026-03-12,Dan Example,Total rewire,900.00,180.00,1080.00,No');
     expect(refs(result)).toEqual(['A1', 'A2', 'A3', 'A4']);
