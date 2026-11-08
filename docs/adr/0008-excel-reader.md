@@ -1,6 +1,6 @@
 # 0008. Excel reader
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-08
 
 ## Context
