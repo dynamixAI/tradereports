@@ -1,0 +1,24 @@
+/* dark is the default; light follows the computer's setting */
+:root {
+  --bg: #0c0c0d;
+  --ink: #f3efe9;
+  --muted: #9a948c;
+  --copper: #e2784a;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f3f2ee;
+    --ink: #121212;
+    --muted: #5f5d58;
+    --copper: #c9592b;
+  }
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, sans-serif;
+}
+main {
+  padding: 40px 28px;
+}
