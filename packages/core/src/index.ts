@@ -18,3 +18,4 @@ export { convertTradifyJobs } from './tradify/jobs';
 export { linkRecords } from './link';
 export { workNotBilled } from './reports/unbilled';
 export { incomeByPeriod } from './reports/income';
+export { customerInsights } from './reports/customers';
