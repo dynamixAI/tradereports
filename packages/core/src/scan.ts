@@ -1,6 +1,6 @@
 import { cleanPostcode, readEmails, readPhones, readYesNo } from './clean';
 import type { CsvTable } from './csv';
-import { isExcelSerial, numericDateParts, readDate } from './dates';
+import { isExcelSerial, isImpossibleDate, numericDateParts, readDate, readDayMonth } from './dates';
 import { parseMoney } from './money';
 
 export type ValueKind =
@@ -25,6 +25,9 @@ export interface ColumnScan {
   // null when the column doesn't hold dates
   dateOrder: DateOrderFinding | null;
   excelDates: boolean;
+  // dates with no year ("29th July") and dates that can't be real ("31/09/2025")
+  noYear: string[];
+  impossible: string[];
   // every filled value different: a sign of an ID column
   unique: boolean;
   // the most common values, for mapping status words
@@ -63,6 +66,8 @@ export function scanColumn(values: (string | null)[]): ColumnScan {
   let numericDates = 0;
   let otherDates = 0;
   let serials = 0;
+  const noYear: string[] = [];
+  const impossible: string[] = [];
 
   for (const value of filled) {
     const phones = readPhones(value);
@@ -92,7 +97,10 @@ export function scanColumn(values: (string | null)[]): ColumnScan {
     } else if (readDate(value) !== null) {
       counts.date += 1;
       otherDates += 1;
+    } else if (readDayMonth(value)) {
+      noYear.push(value);
     }
+    if (isImpossibleDate(value)) impossible.push(value);
   }
 
   const total = filled.length;
@@ -126,9 +134,11 @@ export function scanColumn(values: (string | null)[]): ColumnScan {
     share,
     dateOrder,
     excelDates,
+    noYear,
+    impossible,
     unique: total > 1 && tally.size === total,
     topValues,
-    evidence: describe(share, dateOrder, excelDates, total, tally.size),
+    evidence: describe(share, dateOrder, excelDates, total, tally.size, noYear, impossible),
   };
 }
 
@@ -148,6 +158,8 @@ function describe(
   excelDates: boolean,
   filled: number,
   distinct: number,
+  noYear: string[] = [],
+  impossible: string[] = [],
 ): string[] {
   if (filled === 0) return ['Every cell is empty.'];
   const lines: string[] = [];
@@ -157,6 +169,14 @@ function describe(
     // whole numbers are also money and phones are also whole numbers; say the more specific thing
     if (kind === 'money' && (strong.includes('whole number') || strong.includes('date'))) continue;
     if (kind === 'whole number' && strong.includes('date')) continue;
+    // a column of whole numbers could be pounds without pence or reference numbers;
+    // the arithmetic across columns decides later, so say both
+    if (kind === 'whole number') {
+      lines.push(
+        `${Math.round(share[kind] * 100)}% are whole numbers, which could be amounts in whole pounds or reference numbers.`,
+      );
+      continue;
+    }
     lines.push(`${Math.round(share[kind] * 100)}% are ${DESCRIPTIONS[kind]}.`);
   }
   if (excelDates) lines.push('These look like Excel date numbers.');
@@ -165,8 +185,21 @@ function describe(
   if (dateOrder === 'ambiguous')
     lines.push('Dates could be day first or month first. Please say which.');
   if (dateOrder === 'mixed') lines.push('Dates are in both orders, so some must be wrong.');
+  if (noYear.length > 0)
+    lines.push(
+      `${count(noYear.length, 'date has', 'dates have')} no year, such as "${noYear[0] ?? ''}". The year will need confirming.`,
+    );
+  if (impossible.length > 0)
+    lines.push(
+      `${count(impossible.length, 'date is', 'dates are')} not a real date, such as "${impossible[0] ?? ''}".`,
+    );
   if (distinct === filled && filled > 1) lines.push('Every value is different.');
   else if (distinct <= 10 && filled >= 10) lines.push(`Only ${distinct} different values.`);
   if (lines.length === 0) lines.push('Mostly text.');
   return lines;
+}
+
+// "1 date has", "2 dates have"
+function count(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
 }

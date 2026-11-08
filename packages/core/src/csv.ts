@@ -9,7 +9,10 @@ export type CsvIssueKind =
   | 'duplicate-header'
   | 'missing-cells'
   | 'extra-cells'
-  | 'bad-quotes';
+  | 'bad-quotes'
+  | 'title-rows'
+  | 'total-row'
+  | 'spacer-column';
 
 export interface CsvIssue {
   kind: CsvIssueKind;
@@ -34,8 +37,13 @@ export function cleanCell(value: string): string | null {
   return EMPTY_MARKERS.has(trimmed) ? null : trimmed;
 }
 
+export interface ReadCsvOptions {
+  // spreadsheet row of the headers when it isn't the first row with something in it
+  headerRow?: number;
+}
+
 // read CSV text into headers, rows and a list of problems; never guesses types
-export function readCsv(text: string): CsvTable {
+export function readCsv(text: string, options: ReadCsvOptions = {}): CsvTable {
   const issues: CsvIssue[] = [];
 
   // some exports start with an invisible byte order mark
@@ -59,7 +67,9 @@ export function readCsv(text: string): CsvTable {
   // pair each record with its row number, then drop lines with nothing in them
   const records = parsed.data
     .map((cells, index) => ({ cells, row: index + 1 }))
-    .filter(({ cells }) => cells.some((cell) => cell.trim() !== ''));
+    .filter(({ cells }) => cells.some((cell) => cell.trim() !== ''))
+    // rows above the chosen header row are titles, not data
+    .filter(({ row }) => options.headerRow === undefined || row >= options.headerRow);
 
   const [headerRecord, ...dataRecords] = records;
   if (!headerRecord) {
