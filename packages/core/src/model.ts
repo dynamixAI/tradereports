@@ -97,6 +97,33 @@ export interface Quote {
   source: SourceRef;
 }
 
+export interface Job {
+  businessId: string;
+  // text, never a number: "JB00001", "4"
+  number: string;
+  customerName: string | null;
+  title: string | null;
+  // links as this file states them; other files may add more
+  quoteNumbers: string[];
+  invoiceNumbers: string[];
+  // YYYY-MM-DD
+  createdDate: string | null;
+  scheduledDate: string | null;
+  completedDate: string | null;
+  completed: Known<boolean>;
+  // the tool's own stage word, e.g. Tradify's "Unassigned"
+  stageAsTyped: string | null;
+  categories: string[];
+  // names only; some exports give no amounts per item
+  itemNames: string[];
+  address: Address | null;
+  // before VAT
+  revenuePence: Known<number>;
+  costPence: Known<number>;
+  profitPence: Known<number>;
+  source: SourceRef;
+}
+
 // an address as the file gave it, plus cleaned versions for grouping by area
 export interface Address {
   street: string | null;
