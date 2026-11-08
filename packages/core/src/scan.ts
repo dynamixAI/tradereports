@@ -157,6 +157,14 @@ function describe(
     // whole numbers are also money and phones are also whole numbers; say the more specific thing
     if (kind === 'money' && (strong.includes('whole number') || strong.includes('date'))) continue;
     if (kind === 'whole number' && strong.includes('date')) continue;
+    // a column of whole numbers could be pounds without pence or reference numbers;
+    // the arithmetic across columns decides later, so say both
+    if (kind === 'whole number') {
+      lines.push(
+        `${Math.round(share[kind] * 100)}% are whole numbers, which could be amounts in whole pounds or reference numbers.`,
+      );
+      continue;
+    }
     lines.push(`${Math.round(share[kind] * 100)}% are ${DESCRIPTIONS[kind]}.`);
   }
   if (excelDates) lines.push('These look like Excel date numbers.');

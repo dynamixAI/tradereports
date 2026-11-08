@@ -77,12 +77,13 @@ export function readEmails(text: string | null): { emails: string[]; rejected: s
   return { emails, rejected };
 }
 
-// Yes/no words seen in real exports: Jobber "true"/"false", Tradify "TRUE"/"FALSE"/"Yes"/"No"
+// Yes/no words: Jobber "true"/"false", Tradify "TRUE"/"FALSE"/"Yes"/"No", and the
+// Y/N shorthand people type in their own spreadsheets
 export function readYesNo(text: string | null): Known<boolean> {
   if (!text) return unknown('empty');
   const word = text.trim().toLowerCase();
-  if (word === 'true' || word === 'yes') return stated(true);
-  if (word === 'false' || word === 'no') return stated(false);
+  if (word === 'true' || word === 'yes' || word === 'y') return stated(true);
+  if (word === 'false' || word === 'no' || word === 'n') return stated(false);
   return unknown(`"${text}" is not yes or no`);
 }
 
