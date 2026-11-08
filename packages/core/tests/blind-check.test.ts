@@ -10,6 +10,7 @@ import {
   statusKey,
   type Answers,
   type Question,
+  type StatusMeaning,
 } from '../src/general/questions';
 import { pounds } from '../src/invoice-checks';
 import { FIELDS, suggestColumns } from '../src/suggest';
@@ -72,7 +73,16 @@ describe.skipIf(files.length === 0)('blind check', () => {
 // Accept the suggestions, list what a user would still be asked, then answer those with
 // placeholders (first option, ignore, day first) so the totals can be checked by hand.
 function convertReport(sheet: ReturnType<typeof readSheet>): string[] {
-  let answers = acceptSuggested(sheet, emptyAnswers());
+  // meanings given by hand for codes nobody can guess: BLIND_STATUS="open=unpaid,clr=paid"
+  const given = Object.fromEntries(
+    (process.env['BLIND_STATUS'] ?? '')
+      .split(',')
+      .map((pair) => pair.split('=').map((part) => part.trim().toLowerCase()))
+      .filter((pair): pair is [string, StatusMeaning] =>
+        ['paid', 'unpaid', 'part paid', 'ignore'].includes(pair[1] ?? ''),
+      ),
+  );
+  let answers = acceptSuggested(sheet, { ...emptyAnswers(), status: given });
   const asked = askQuestions(sheet, answers);
   const placeholder = (current: Answers, q: Question): Answers => {
     if (q.kind === 'column')
