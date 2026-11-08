@@ -12,6 +12,7 @@ import {
   type Known,
   type TaxMode,
 } from '../model';
+import { applyRepairs, findRepairs } from '../repairs';
 import { askQuestions, statusKey, type Answers } from './questions';
 
 export interface SpreadsheetOptions {
@@ -22,11 +23,12 @@ export interface SpreadsheetOptions {
 // Turn a home-made spreadsheet into invoices, using only what the user confirmed.
 // One row is one invoice. Nothing is guessed: a value we can't read stays unknown.
 export function convertSpreadsheet(
-  table: CsvTable,
+  original: CsvTable,
   answers: Answers,
   options: SpreadsheetOptions,
 ): ConvertResult<Invoice> {
-  const open = askQuestions(table, answers);
+  // repairs are suggestions; an unanswered one doesn't hold up the rest
+  const open = askQuestions(original, answers).filter((q) => q.kind !== 'repair');
   if (open.length > 0) {
     return {
       records: [],
@@ -41,6 +43,17 @@ export function convertSpreadsheet(
   }
 
   const issues: ConvertIssue[] = [];
+  // the accepted repairs, applied to a copy; each one is noted against its row
+  const { table, notes } = applyRepairs(
+    original,
+    findRepairs(original),
+    (repair) => answers.repairs[repair.id] === 'accept',
+  );
+  for (const note of notes) {
+    issues.push({ kind: 'source-quirk', rows: [note.row], message: `Repaired: ${note.rule}.` });
+  }
+  const repaired = (rowNumber: number, header: string | null | undefined) =>
+    notes.find((n) => n.row === rowNumber && n.header === header)?.rule ?? null;
   const cols = answers.columns;
   const records: Invoice[] = [];
   const seen = new Map<string, number>();
@@ -88,6 +101,9 @@ export function convertSpreadsheet(
     }
 
     const tax = workOutVat(row, answers, gross, label, rowNumber, issues);
+    // a net read from a repaired cell is worked out from the user's repair, not stated
+    const netRule = repaired(rowNumber, cols.net);
+    if (netRule && tax.net.origin === 'stated') tax.net = derived(tax.net.value, netRule);
     const paid = workOutPaid(cell(cols.status), cols.status, answers, gross);
 
     records.push({
