@@ -21,6 +21,7 @@ describe('notes under the data', () => {
     ['a sentence in the first column', 'Remember to chase the drain job'],
     ['a sentence in a middle column', ',,,Ring Bob before Friday about the drain,,,,'],
     ['two notes after a blank line', '', 'Van MOT due in April', 'Order more fittings'],
+    ['a label and the note in the next cell', 'NB,check the boiler job price'],
   ])('leaves out %s', (_name, ...extra) => {
     const result = sheet(...extra);
     expect(refs(result)).toEqual(['A1', 'A2', 'A3']);
@@ -68,6 +69,9 @@ describe('notes between records', () => {
     ['a sentence in a middle column', ',,,Waiting on parts from the merchant,,,,'],
     ['a heading in the first column', 'MARCH JOBS'],
     ['a one word heading', 'March'],
+    ['a label and the note in the next cell', 'NOTE:,van in the garage all week'],
+    ['a label and the note further along', 'Reminder,,,renew the gas card,,,,'],
+    ['a note with a number inside it', 'Ref,owes 40 from last year'],
   ])('leaves out %s', (_name, extra) => {
     const result = between(extra);
     expect(refs(result)).toEqual(['A1', 'A2', 'A3']);
@@ -81,6 +85,8 @@ describe('notes between records', () => {
     ['a reference and an amount', 'A9,,,,,,50.00,'],
     ['a name and an amount', ',,Eve Example,,,,30.00,'],
     ['a date only', ',2026-03-02,,,,,,'],
+    ['a day-first date only', ',03/03/2026,,,,,,'],
+    ['a reference and a date', 'A9,13/03/2026,,,,,,'],
   ])('keeps a sparse row with %s', (_name, extra) => {
     const result = between(extra);
     expect(result.rows).toHaveLength(4);

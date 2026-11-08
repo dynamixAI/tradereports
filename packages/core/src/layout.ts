@@ -158,17 +158,18 @@ function dropTotalRows(table: CsvTable, notes: CsvIssue[]): CsvTable {
     const isLast = index === table.rows.length - 1;
     const addsUp = sums.length >= 2 || (sums.length === 1 && isLast);
 
-    // below the last full row, a sparse row with nothing in the first column, or a
-    // single sentence, is a footer: a summary someone typed or a note to themselves
-    const firstEmpty = row[table.headers[0] ?? ''] === null;
-    const sentence = cells.length === 1 && (cells[0] ?? '').trim().split(/\s+/).length >= 3;
-    const footer = index > lastDense && !dense(row) && (firstEmpty || sentence);
+    // a short row with no amount or date in any cell can't be a usable record: it's a
+    // note or a heading, even when it's split over cells like "NOTE:" and the text
+    const wordsOnly = cells.every((cell) => parseMoney(cell) === null && !isDate(cell));
 
-    // between records, a sparse row with no amount or date in any cell is a note or a
-    // heading someone typed in, not a record; a sparse row with an amount is kept
-    const wordsOnly = cells.every((cell) => parseMoney(cell) === null && readDate(cell) === null);
-    const betweenNote =
-      index <= lastDense && !dense(row) && wordsOnly && (firstEmpty || cells.length === 1);
+    // below the last full row, a short row with nothing in the first column, or with
+    // only words, is a footer: a summary someone typed or a note to themselves
+    const firstEmpty = row[table.headers[0] ?? ''] === null;
+    const footer = index > lastDense && !dense(row) && (firstEmpty || wordsOnly);
+
+    // between records the same words-only rule applies; a short row with an amount or a
+    // date is kept, as it may be a half-filled record
+    const betweenNote = index <= lastDense && !dense(row) && wordsOnly;
 
     if (labelled || addsUp) {
       const what = sums[0]
@@ -214,6 +215,11 @@ function rawRows(text: string): { cells: string[]; row: number }[] {
 
 function countRowsAbove(text: string, headerRow: number): number {
   return rawRows(text).filter(({ row }) => row < headerRow).length;
+}
+
+// a date in any format, numeric ones in either order
+function isDate(cell: string): boolean {
+  return readDate(cell, 'day-first') !== null || readDate(cell, 'month-first') !== null;
 }
 
 function filledCells(cells: string[]): string[] {
