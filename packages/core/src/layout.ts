@@ -148,6 +148,12 @@ function dropTotalRows(table: CsvTable, notes: CsvIssue[]): CsvTable {
     const sentence = cells.length === 1 && (cells[0] ?? '').trim().split(/\s+/).length >= 3;
     const footer = index > lastDense && !dense(row) && (firstEmpty || sentence);
 
+    // between records, a sparse row with no amount or date in any cell is a note or a
+    // heading someone typed in, not a record; a sparse row with an amount is kept
+    const wordsOnly = cells.every((cell) => parseMoney(cell) === null && readDate(cell) === null);
+    const betweenNote =
+      index <= lastDense && !dense(row) && wordsOnly && (firstEmpty || cells.length === 1);
+
     if (labelled || addsUp) {
       const what = sums[0]
         ? ` (${sums[0]} ${pounds(parseMoney(row[sums[0]] ?? '') ?? 0)} adds up the rows above)`
@@ -164,6 +170,12 @@ function dropTotalRows(table: CsvTable, notes: CsvIssue[]): CsvTable {
         message: hasMoney
           ? `Row ${rowNumber} is below the data and looks like a summary, so it was left out.`
           : `Row ${rowNumber} is below the data and looks like a note, so it was left out.`,
+      });
+    } else if (betweenNote) {
+      notes.push({
+        kind: 'total-row',
+        row: rowNumber,
+        message: `Row ${rowNumber} is between records and looks like a note, so it was left out.`,
       });
     } else {
       keepRows.push(index);

@@ -119,6 +119,10 @@ function makeLayout(seed: number): Layout {
       }
     });
     lines.push(values.join(','));
+    // now and then a note or a blank line between records
+    const between = r.next();
+    if (i < n && between < 0.05) lines.push(cellsAt({ [r.int(0, width - 1)]: r.pick(NOTES) }));
+    else if (i < n && between < 0.1) lines.push(blankRow);
   }
 
   // a footer of totals, summaries and notes, sometimes after a blank line

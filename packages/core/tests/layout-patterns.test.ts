@@ -28,6 +28,34 @@ describe('notes under the data', () => {
   });
 });
 
+describe('notes between records', () => {
+  const between = (...extra: string[]) =>
+    readSheet([header, rows[0], ...extra, rows[1], rows[2]].join('\n'));
+
+  it.each([
+    ['a sentence in the last column', ',,,,,,,part paid 40 - rest on the invoice'],
+    ['a sentence in a middle column', ',,,Waiting on parts from the merchant,,,,'],
+    ['a heading in the first column', 'MARCH JOBS'],
+    ['a one word heading', 'March'],
+  ])('leaves out %s', (_name, extra) => {
+    const result = between(extra);
+    expect(refs(result)).toEqual(['A1', 'A2', 'A3']);
+    expect(
+      result.issues.some((issue) => issue.row === 3 && issue.message.includes('between records')),
+    ).toBe(true);
+    expect(result.issues.some((issue) => issue.kind === 'missing-cells')).toBe(false);
+  });
+
+  it.each([
+    ['a reference and an amount', 'A9,,,,,,50.00,'],
+    ['a name and an amount', ',,Eve Example,,,,30.00,'],
+    ['a date only', ',2026-03-02,,,,,,'],
+  ])('keeps a sparse row with %s', (_name, extra) => {
+    const result = between(extra);
+    expect(result.rows).toHaveLength(4);
+  });
+});
+
 describe('summaries under the data', () => {
   it.each([
     ['a label in a middle column', ',,,,Money in,,216.00,'],
