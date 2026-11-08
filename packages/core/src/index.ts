@@ -17,3 +17,4 @@ export { convertJobberJobs } from './jobber/jobs';
 export { convertTradifyJobs } from './tradify/jobs';
 export { linkRecords } from './link';
 export { workNotBilled } from './reports/unbilled';
+export { incomeByPeriod } from './reports/income';
