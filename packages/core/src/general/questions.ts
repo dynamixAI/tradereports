@@ -1,6 +1,7 @@
 import type { CsvTable } from '../csv';
 import { readDate, readDayMonth, type DateOrder } from '../dates';
 import { scanColumn } from '../scan';
+import { findRepairs, type Repair } from '../repairs';
 import { readStatus } from '../status';
 import { FIELDS, suggestColumns, type Field } from '../suggest';
 
@@ -18,6 +19,8 @@ export interface Answers {
   status: Record<string, StatusMeaning>;
   // the year for each date written with none, keyed by the value as typed
   years: Record<string, number>;
+  // repair suggestions (ADR 0007), keyed by repair id; unanswered means not applied
+  repairs: Record<string, 'accept' | 'reject'>;
 }
 
 export type Question =
@@ -39,12 +42,14 @@ export type Question =
       count: number;
       suggested: StatusMeaning | null;
     }
-  | { kind: 'year'; column: string; value: string; suggested: number | null };
+  | { kind: 'year'; column: string; value: string; suggested: number | null }
+  // never blocks converting: an unanswered repair is simply not applied
+  | { kind: 'repair'; repair: Repair };
 
 export const REQUIRED_FIELDS: Field[] = ['invoiceNumber', 'customer', 'gross'];
 
 export function emptyAnswers(): Answers {
-  return { columns: {}, status: {}, years: {} };
+  return { columns: {}, status: {}, years: {}, repairs: {} };
 }
 
 // status values are matched ignoring case and spaces at the ends; a blank is its own value
@@ -128,6 +133,10 @@ export function askQuestions(table: CsvTable, answers: Answers): Question[] {
     }
   }
 
+  for (const repair of findRepairs(table)) {
+    if (!(repair.id in answers.repairs)) questions.push({ kind: 'repair', repair });
+  }
+
   return questions;
 }
 
@@ -172,6 +181,7 @@ export function acceptSuggested(table: CsvTable, answers: Answers): Answers {
     columns: { ...answers.columns },
     status: { ...answers.status },
     years: { ...answers.years },
+    repairs: { ...answers.repairs },
     ...(answers.dateOrder ? { dateOrder: answers.dateOrder } : {}),
   };
   for (let changed = true; changed;) {

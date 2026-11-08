@@ -174,3 +174,39 @@ describe('unanswered questions', () => {
     expect(result.issues[0]?.message).toMatch(/questions are still to answer/);
   });
 });
+
+describe('repairs', () => {
+  const rows = [
+    'A1,03/03/2026,Ann,100.00,20.00,120.00,Yes',
+    'A2,14/03/2026,Bob,80.00,16.00,96.00,No',
+    'A3,15/03/2026,Cat,50.00,10.00,60.00,Yes',
+    'A4,16/03/2026,Dan,40.00,8.00,48.00,No',
+    // the net was typed into the date column by mistake
+    'A5,£380.00,Eve,,76.00,456.00,No',
+  ];
+  const table = readSheet([header, ...rows].join('\n'));
+  const base = { ...emptyAnswers(), columns, status, dateOrder: 'day-first' as const };
+  const id = 'move:6:When:Net';
+
+  it('uses an accepted repair, notes it, and marks the net as worked out', () => {
+    const result = convertSpreadsheet(table, { ...base, repairs: { [id]: 'accept' } }, options);
+    const fixed = result.records[4];
+    expect(fixed?.netPence).toEqual({
+      origin: 'derived',
+      value: 38000,
+      rule: 'you moved £380.00 from When to Net on row 6',
+    });
+    expect(result.issues.map((i) => i.message)).toContain(
+      'Repaired: you moved £380.00 from When to Net on row 6.',
+    );
+  });
+
+  it('converts without the repair when it is not answered, and does not wait for it', () => {
+    const result = convertSpreadsheet(table, base, options);
+    expect(result.records).toHaveLength(5);
+    expect(result.records[4]?.netPence.value).toBe(38000);
+    expect(result.records[4]?.netPence.origin).toBe('derived');
+    // worked out as total minus VAT, as the net cell is empty, and the bad date is flagged
+    expect(result.records[4]?.netPence).toMatchObject({ rule: 'total minus VAT' });
+  });
+});

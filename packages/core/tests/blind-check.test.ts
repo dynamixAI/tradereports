@@ -93,6 +93,8 @@ function convertReport(sheet: ReturnType<typeof readSheet>): string[] {
     if (q.kind === 'status')
       return { ...current, status: { ...current.status, [statusKey(q.value)]: 'ignore' } };
     if (q.kind === 'date-order') return { ...current, dateOrder: 'day-first' };
+    // repairs are left unanswered here; the second figures below accept them all
+    if (q.kind === 'repair') return current;
     return { ...current, years: { ...current.years, [q.value]: 2026 } };
   };
   for (let round = 0; round < 3; round += 1) {
@@ -102,9 +104,22 @@ function convertReport(sheet: ReturnType<typeof readSheet>): string[] {
     businessId: 'blind',
     file: 'blind',
   });
-  const sum = (amount: (r: (typeof records)[number]) => number) =>
-    records.reduce((total, r) => total + amount(r), 0);
-  const unknownDue = records.filter((r) => r.duePence.value === null).length;
+  const repairs = asked.flatMap((q) => (q.kind === 'repair' ? [q.repair] : []));
+  const withRepairs = convertSpreadsheet(
+    sheet,
+    { ...answers, repairs: Object.fromEntries(repairs.map((r) => [r.id, 'accept' as const])) },
+    { businessId: 'blind', file: 'blind' },
+  ).records;
+  type Rec = (typeof records)[number];
+  const totals = (list: Rec[]) => {
+    const sum = (amount: (r: Rec) => number) => list.reduce((total, r) => total + amount(r), 0);
+    const unknownDue = list.filter((r) => r.duePence.value === null).length;
+    return [
+      `  Invoices: ${list.length}`,
+      `  Net: ${pounds(sum((r) => r.netPence.value ?? 0))}  VAT: ${pounds(sum((r) => r.taxPence))}  Gross: ${pounds(sum((r) => r.grossPence))}`,
+      `  Owed: ${pounds(sum((r) => r.duePence.value ?? 0))}${unknownDue > 0 ? ` (${unknownDue} invoices with unknown amount owed)` : ''}`,
+    ];
+  };
   const describe = (q: Question) =>
     q.kind === 'column'
       ? `which column is ${q.field}${
@@ -119,15 +134,18 @@ function convertReport(sheet: ReturnType<typeof readSheet>): string[] {
         ? `what "${q.value || '(blank)'}" means (${q.count} rows)`
         : q.kind === 'date-order'
           ? `whether dates in "${q.column}" are day first`
-          : `the year for "${q.value}"`;
+          : q.kind === 'repair'
+            ? `repair: ${q.repair.action} on row ${q.repair.row}. ${q.repair.evidence.join(' ')}`
+            : `the year for "${q.value}"`;
   return [
     'Questions the user would be asked:',
     ...(asked.length === 0 ? ['  (none)'] : asked.map((q) => `  - ${describe(q)}`)),
     '',
     `Converted (placeholders used for ${asked.length} unanswered questions):`,
-    `  Invoices: ${records.length}`,
-    `  Net: ${pounds(sum((r) => r.netPence.value ?? 0))}  VAT: ${pounds(sum((r) => r.taxPence))}  Gross: ${pounds(sum((r) => r.grossPence))}`,
-    `  Owed: ${pounds(sum((r) => r.duePence.value ?? 0))}${unknownDue > 0 ? ` (${unknownDue} invoices with unknown amount owed)` : ''}`,
+    ...totals(records),
+    ...(repairs.length > 0
+      ? [`With all ${repairs.length} repairs accepted:`, ...totals(withRepairs)]
+      : []),
     'Checks:',
     ...(issues.length === 0 ? ['  (none)'] : issues.map((i) => `  [${i.kind}] ${i.message}`)),
   ];
