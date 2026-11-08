@@ -11,8 +11,11 @@ import { parseMoney } from './money';
 export type Kind = 'email' | 'phone' | 'postcode' | 'date' | 'money';
 
 export interface Repair {
-  // the same file always gives the same id, so answers can be saved and reused
+  // names the repair by row number, for showing; the same file always gives the same id
   id: string;
+  // names it by what the row says instead, so a saved answer still finds its row after
+  // rows are added or removed; answers are saved under this
+  key: string;
   action: 'move' | 'swap' | 'remove-copy' | 'shift';
   // spreadsheet row
   row: number;
@@ -118,6 +121,7 @@ export function findRepairs(table: CsvTable): Repair[] {
       if (!copy) continue;
       repairs.push({
         id: `remove-copy:${rowNumber}:${header}`,
+        key: '',
         action: 'remove-copy',
         row: rowNumber,
         from: header,
@@ -150,6 +154,7 @@ export function findRepairs(table: CsvTable): Repair[] {
         const there = cell(swap.header) ?? '';
         repairs.push({
           id: `swap:${rowNumber}:${header}:${swap.header}`,
+          key: '',
           action: 'swap',
           row: rowNumber,
           from: header,
@@ -181,6 +186,7 @@ export function findRepairs(table: CsvTable): Repair[] {
         evidence.push(...sumEvidence(table.headers, kindOfColumn, row, only.header, value));
       repairs.push({
         id: `move:${rowNumber}:${header}:${only.header}`,
+        key: '',
         action: 'move',
         row: rowNumber,
         from: header,
@@ -194,7 +200,32 @@ export function findRepairs(table: CsvTable): Repair[] {
     }
   });
   repairs.push(...moneySwaps(table, columns, repairs));
-  return repairs;
+  // the key swaps the row number for a fingerprint of the row as typed
+  return repairs.map((repair) => {
+    const index = table.rowNumbers.indexOf(repair.row);
+    const print = rowPrint(table, index);
+    return {
+      ...repair,
+      key: repair.id
+        .replace(`:${repair.row}:`, `:${print}:`)
+        .replace(new RegExp(`:${repair.row}$`), `:${print}`),
+    };
+  });
+}
+
+// A short fingerprint of a row's cells as typed, the same wherever the row sits.
+export function rowPrint(table: CsvTable, index: number): string {
+  const row = table.rows[index] ?? {};
+  const text = [...table.headers.map((h) => row[h] ?? ''), ...(table.overflow?.[index] ?? [])].join(
+    '\u0001',
+  );
+  // FNV-1a: small, fast and the same on every machine
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
 }
 
 // A shifted row: from some column on, every value sits one column out, after a stray
@@ -272,6 +303,7 @@ function findShifts(table: CsvTable, columns: { header: string; kind: Kind | nul
         : [];
     shifts.push({
       id: `shift:${rowNumber}:${start}:${best.way}`,
+      key: '',
       action: 'shift',
       row: rowNumber,
       from: start,
@@ -360,6 +392,7 @@ function moneySwaps(
     const [from, to] = fix;
     swaps.push({
       id: `swap:${rowNumber}:${from}:${to}`,
+      key: '',
       action: 'swap',
       row: rowNumber,
       from,

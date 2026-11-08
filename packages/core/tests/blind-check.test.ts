@@ -113,13 +113,13 @@ function convertReport(sheet: ReturnType<typeof readSheet>): string[] {
   const repairs = asked.flatMap((q) => (q.kind === 'repair' ? [q.repair] : []));
   const sameCustomers = asked.flatMap((q) => (q.kind === 'same-customer' ? [q.match] : []));
   const splits = asked.flatMap((q) => (q.kind === 'split-customer' ? [q.split] : []));
-  const notes = asked.flatMap((q) => (q.kind === 'note-amount' ? [q.id] : []));
+  const notes = asked.flatMap((q) => (q.kind === 'note-amount' ? [q.key] : []));
   const withRepairs = convertSpreadsheet(
     sheet,
     {
       ...answers,
       repairs: Object.fromEntries(
-        [...repairs.map((r) => r.id), ...notes].map((id) => [id, 'accept' as const]),
+        [...repairs.map((r) => r.key), ...notes].map((id) => [id, 'accept' as const]),
       ),
       names: Object.fromEntries([
         ...sameCustomers.map((m) => [m.id, 'same' as const]),
