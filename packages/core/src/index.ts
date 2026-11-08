@@ -15,3 +15,4 @@ export { convertJobberQuotes } from './jobber/quotes';
 export { convertTradifyQuotes } from './tradify/quotes';
 export { convertJobberJobs } from './jobber/jobs';
 export { convertTradifyJobs } from './tradify/jobs';
+export { linkRecords } from './link';

@@ -172,7 +172,10 @@ export interface ConvertIssue {
     | 'totals-do-not-add-up'
     | 'possible-draft'
     | 'source-quirk'
-    | 'duplicate-name';
+    | 'duplicate-name'
+    | 'missing-link'
+    | 'links-disagree'
+    | 'customer-not-found';
   rows: number[];
   message: string;
 }
