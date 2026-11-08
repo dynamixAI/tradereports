@@ -203,3 +203,13 @@ function describe(
 function count(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
+
+// whole numbers that mostly go up by one, like 1041, 1042, 1043
+export function countsUp(cells: string[]): boolean {
+  if (cells.length < 3 || !cells.every((c) => /^\d+$/.test(c.trim()))) return false;
+  const sorted = [...new Set(cells.map(Number))].sort((x, y) => x - y);
+  let steps = 0;
+  for (let i = 1; i < sorted.length; i += 1)
+    if ((sorted[i] ?? 0) - (sorted[i - 1] ?? 0) === 1) steps += 1;
+  return steps / (sorted.length - 1) >= 0.6;
+}
