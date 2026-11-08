@@ -12,8 +12,8 @@ import {
   type Known,
   type TaxMode,
 } from '../model';
-import { findNameMatches } from '../names';
-import { askQuestions, repairedTable, statusKey, type Answers } from './questions';
+import { findNameMatches, findNameSplits } from '../names';
+import { askQuestions, mergedTable, repairedTable, statusKey, type Answers } from './questions';
 
 export interface SpreadsheetOptions {
   businessId: string;
@@ -29,7 +29,7 @@ export function convertSpreadsheet(
 ): ConvertResult<Invoice> {
   // repairs are suggestions; an unanswered one doesn't hold up the rest
   const open = askQuestions(original, answers).filter(
-    (q) => q.kind !== 'repair' && q.kind !== 'same-customer',
+    (q) => q.kind !== 'repair' && q.kind !== 'same-customer' && q.kind !== 'split-customer',
   );
   if (open.length > 0) {
     return {
@@ -63,6 +63,21 @@ export function convertSpreadsheet(
         kind: 'source-quirk',
         rows: match.rows,
         message: `Same customer: you said "${match.variant}" is "${match.canonical}".`,
+      });
+    }
+  }
+  // one name the user said is two customers: each group gets its label, e.g. its postcode
+  const splitName = new Map<number, string>();
+  if (cols.customer) {
+    for (const split of findNameSplits(mergedTable(table, cols.customer, answers), cols.customer)) {
+      if (answers.names[split.id] !== 'separate') continue;
+      for (const group of split.groups) {
+        for (const row of group.rows) splitName.set(row, `${split.name} (${group.label})`);
+      }
+      issues.push({
+        kind: 'source-quirk',
+        rows: split.groups.flatMap((g) => g.rows),
+        message: `Different customers: you said "${split.name}" is ${split.groups.length} customers, labelled ${split.groups.map((g) => `"${split.name} (${g.label})"`).join(' and ')}.`,
       });
     }
   }
@@ -107,7 +122,7 @@ export function convertSpreadsheet(
     }
 
     const typed = cell(cols.customer);
-    const customer = typed ? (sameAs.get(typed) ?? typed) : null;
+    const customer = splitName.get(rowNumber) ?? (typed ? (sameAs.get(typed) ?? typed) : null);
     if (!customer) {
       issues.push({ kind: 'bad-value', rows: [rowNumber], message: `${label} has no customer.` });
     }

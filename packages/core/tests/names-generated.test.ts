@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readSheet } from '../src/layout';
-import { findNameMatches } from '../src/names';
+import { findNameMatches, findNameSplits } from '../src/names';
 
 // 200 files, each with its own customers and their own phones and postcodes. Variants are
 // planted (spacing, capitals, a stray symbol, a typo, swapped letters), and decoys too: a
@@ -93,7 +93,24 @@ function build(seed: number) {
   if (r.next() < 0.5) {
     const name = r.pick(people);
     const decoy = plant(name, 'typo', r);
-    rows.push({ name: decoy, phone: '07700 900999', area: 'CA1 1AA' });
+    // a decoy spelled like a planted variant would be the same name with two sets of
+    // contacts, which is a real split, not a decoy
+    if (!expected.some((e) => e.startsWith(`${decoy} ->`))) {
+      rows.push({ name: decoy, phone: '07700 900999', area: 'CA1 1AA' });
+    }
+  }
+
+  // a twin: a different customer with exactly the same name and their own contacts
+  const twins: string[] = [];
+  if (r.next() < 0.4) {
+    const name = r.pick(people);
+    if (!expected.some((e) => e.endsWith(`-> ${name}`))) {
+      rows.push(
+        { name, phone: '07700 900888', area: 'LA1 1AA' },
+        { name, phone: '07700 900888', area: 'LA1 1AA' },
+      );
+      twins.push(name);
+    }
   }
 
   rows.sort(() => r.next() - 0.5);
@@ -101,17 +118,17 @@ function build(seed: number) {
   rows.forEach((row, i) =>
     lines.push(`R${i + 1},${row.name},${row.phone},${row.area},${(100 + i * 13).toFixed(2)}`),
   );
-  return { text: lines.join('\n'), expected };
+  return { text: lines.join('\n'), expected, twins };
 }
 
 const SEEDS = Array.from({ length: 200 }, (_, i) => i + 1);
 
 describe('possible same customers in 200 generated files', () => {
   it.each(SEEDS)('seed %i', (seed) => {
-    const { text, expected } = build(seed);
-    const found = findNameMatches(readSheet(text), 'Customer').map(
-      (m) => `${m.variant} -> ${m.canonical}`,
-    );
+    const { text, expected, twins } = build(seed);
+    const table = readSheet(text);
+    expect(findNameSplits(table, 'Customer').map((sp) => sp.name)).toEqual(twins);
+    const found = findNameMatches(table, 'Customer').map((m) => `${m.variant} -> ${m.canonical}`);
     expect(found.sort()).toEqual([...expected].sort());
   });
 });

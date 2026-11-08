@@ -32,7 +32,7 @@ export function tidyName(text: string): string {
 // Letters, digits and single spaces only: "dav;id  smith" -> "david smith"
 function bare(text: string): string {
   return tidyName(text)
-    .replace(/[^a-z0-9' ]+/g, '')
+    .replace(/[^a-z0-9 ]+/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -224,4 +224,100 @@ function compare(
     else against.push(`Different ${header}.`);
   }
   return { support, against };
+}
+
+// One name, possibly two customers (ADR 0007): the same name on rows whose phone, email
+// and postcode have nothing in common. Asked, never assumed, as one customer who moved or
+// changed phone looks the same.
+export interface NameSplit {
+  id: string;
+  name: string;
+  // each possible customer, labelled by its postcode, phone or email
+  groups: { label: string; rows: number[] }[];
+  // rows with no contact details, which keep the plain name
+  unplaced: number[];
+  evidence: string[];
+}
+
+export function findNameSplits(table: CsvTable, customerColumn: string): NameSplit[] {
+  const contactColumns = table.headers.filter((header) => {
+    const kind = columnKind(table.rows.map((row) => row[header] ?? null));
+    return kind === 'phone' || kind === 'email' || kind === 'postcode';
+  });
+  // postcode makes the clearest label, then phone, then email
+  const order = ['postcode', 'phone', 'email'];
+  const labelColumns = [...contactColumns].sort(
+    (a, b) =>
+      order.indexOf(columnKind(table.rows.map((r) => r[a] ?? null)) ?? '') -
+      order.indexOf(columnKind(table.rows.map((r) => r[b] ?? null)) ?? ''),
+  );
+  const tidyValue = (value: string) => value.replace(/\s+/g, '').toLowerCase();
+
+  // rows by name as typed
+  const byName = new Map<string, number[]>();
+  table.rows.forEach((row, index) => {
+    const name = row[customerColumn];
+    if (name) byName.set(name, [...(byName.get(name) ?? []), index]);
+  });
+
+  const splits: NameSplit[] = [];
+  for (const [name, indexes] of byName) {
+    if (indexes.length < 2) continue;
+    // group rows that share any contact detail, directly or through another row
+    const groups: number[][] = [];
+    const unplaced: number[] = [];
+    for (const index of indexes) {
+      const row = table.rows[index] ?? {};
+      const mine = new Set(
+        contactColumns.flatMap((h) => (row[h] ? [`${h}:${tidyValue(row[h] ?? '')}`] : [])),
+      );
+      if (mine.size === 0) {
+        unplaced.push(index);
+        continue;
+      }
+      const joined = groups.filter((group) =>
+        group.some((other) => {
+          const theirs = table.rows[other] ?? {};
+          return contactColumns.some(
+            (h) => theirs[h] && mine.has(`${h}:${tidyValue(theirs[h] ?? '')}`),
+          );
+        }),
+      );
+      const merged = [index, ...joined.flat()].sort((a, b) => a - b);
+      for (const group of joined) groups.splice(groups.indexOf(group), 1);
+      groups.push(merged);
+    }
+    if (groups.length < 2) continue;
+
+    const rowNumber = (index: number) => table.rowNumbers[index] ?? index + 2;
+    const label = (group: number[]) => {
+      for (const header of labelColumns) {
+        const value = group.map((i) => table.rows[i]?.[header]).find((v) => v);
+        if (value) return value;
+      }
+      return `row ${rowNumber(group[0] ?? 0)}`;
+    };
+    const labelled = groups
+      .sort((a, b) => (a[0] ?? 0) - (b[0] ?? 0))
+      .map((group) => ({ label: label(group), rows: group.map(rowNumber) }));
+    // two groups with the same label can't be told apart, so leave the name alone
+    if (new Set(labelled.map((g) => g.label)).size < labelled.length) continue;
+
+    splits.push({
+      id: `split:${name}`,
+      name,
+      groups: labelled,
+      unplaced: unplaced.map(rowNumber),
+      evidence: [
+        `"${name}" appears on rows ${labelled.map((g) => g.rows.join(', ')).join(' and rows ')}, with no phone, email or postcode in common.`,
+        'Two different customers, or one customer whose details changed?',
+        ...(unplaced.length > 0
+          ? [
+              `Rows ${unplaced.map(rowNumber).join(', ')} have no contact details, so they keep the plain name.`,
+            ]
+          : []),
+      ],
+    });
+  }
+  return splits;
 }

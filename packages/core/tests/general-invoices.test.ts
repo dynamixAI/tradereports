@@ -243,3 +243,50 @@ describe('same customer', () => {
     expect(result.records[3]?.customerName).toBe('Davod Smith');
   });
 });
+
+describe('one name, two customers', () => {
+  const twinHeader = 'Ref,When,Customer,Postcode,Total,Paid?';
+  const table = readSheet(
+    [
+      twinHeader,
+      'A1,15/03/2026,David Braithwaite,CA8 2DD,120.00,Yes',
+      'A2,16/03/2026,David Braithwaite,CA8 2DD,96.00,No',
+      'A3,17/03/2026,Grace Holt,M4 1NP,60.00,Yes',
+      'A4,18/03/2026,David Braithwaite,CA11 7EE,48.50,No',
+    ].join('\n'),
+  );
+  const answers = {
+    ...emptyAnswers(),
+    columns: {
+      invoiceNumber: 'Ref',
+      date: 'When',
+      customer: 'Customer',
+      net: null,
+      vat: null,
+      gross: 'Total',
+      status: 'Paid?',
+    },
+    status,
+  };
+
+  it('labels each customer by postcode when the user says they are different', () => {
+    const result = convertSpreadsheet(
+      table,
+      { ...answers, names: { 'split:David Braithwaite': 'separate' } },
+      options,
+    );
+    expect(result.records.map((r) => r.customerName)).toEqual([
+      'David Braithwaite (CA8 2DD)',
+      'David Braithwaite (CA8 2DD)',
+      'Grace Holt',
+      'David Braithwaite (CA11 7EE)',
+    ]);
+  });
+
+  it('keeps one name when the question is not answered', () => {
+    const result = convertSpreadsheet(table, answers, options);
+    expect(new Set(result.records.map((r) => r.customerName))).toEqual(
+      new Set(['David Braithwaite', 'Grace Holt']),
+    );
+  });
+});

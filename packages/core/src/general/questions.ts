@@ -1,7 +1,7 @@
 import type { CsvTable } from '../csv';
 import { readDate, readDayMonth, type DateOrder } from '../dates';
 import { scanColumn } from '../scan';
-import { findNameMatches, type NameMatch } from '../names';
+import { findNameMatches, findNameSplits, type NameMatch, type NameSplit } from '../names';
 import { applyRepairs, findRepairs, type Repair } from '../repairs';
 import { readStatus } from '../status';
 import { FIELDS, suggestColumns, type Field } from '../suggest';
@@ -22,7 +22,8 @@ export interface Answers {
   years: Record<string, number>;
   // repair suggestions (ADR 0007), keyed by repair id; unanswered means not applied
   repairs: Record<string, 'accept' | 'reject'>;
-  // possible same customers, keyed by match id; unanswered means kept apart
+  // possible same customers, keyed by match id: unanswered means kept apart. Possible
+  // different customers with one name, keyed by split id: unanswered means kept together
   names: Record<string, 'same' | 'separate'>;
 }
 
@@ -49,7 +50,8 @@ export type Question =
   // never blocks converting: an unanswered repair is simply not applied
   | { kind: 'repair'; repair: Repair }
   // never blocks converting either: unanswered names are kept apart
-  | { kind: 'same-customer'; match: NameMatch };
+  | { kind: 'same-customer'; match: NameMatch }
+  | { kind: 'split-customer'; split: NameSplit };
 
 export const REQUIRED_FIELDS: Field[] = ['invoiceNumber', 'customer', 'gross'];
 
@@ -145,8 +147,16 @@ export function askQuestions(table: CsvTable, answers: Answers): Question[] {
   // names are compared after the accepted repairs, as a repair can change a customer cell
   const customerColumn = answers.columns.customer;
   if (customerColumn) {
-    for (const match of findNameMatches(repairedTable(table, answers).table, customerColumn)) {
+    const repaired = repairedTable(table, answers).table;
+    for (const match of findNameMatches(repaired, customerColumn)) {
       if (!(match.id in answers.names)) questions.push({ kind: 'same-customer', match });
+    }
+    // two customers under one name, worked out after the merges the user accepted
+    for (const split of findNameSplits(
+      mergedTable(repaired, customerColumn, answers),
+      customerColumn,
+    )) {
+      if (!(split.id in answers.names)) questions.push({ kind: 'split-customer', split });
     }
   }
 
@@ -225,4 +235,22 @@ export function acceptSuggested(table: CsvTable, answers: Answers): Answers {
 // The table with the user's accepted repairs applied; the original is not changed.
 export function repairedTable(table: CsvTable, answers: Answers) {
   return applyRepairs(table, findRepairs(table), (r) => answers.repairs[r.id] === 'accept');
+}
+
+// The customer column with the spellings the user said are the same put together.
+export function mergedTable(table: CsvTable, customerColumn: string, answers: Answers): CsvTable {
+  const sameAs = new Map(
+    findNameMatches(table, customerColumn)
+      .filter((m) => answers.names[m.id] === 'same')
+      .map((m) => [m.variant, m.canonical]),
+  );
+  return {
+    ...table,
+    rows: table.rows.map((row) => {
+      const name = row[customerColumn];
+      return name && sameAs.has(name)
+        ? { ...row, [customerColumn]: sameAs.get(name) ?? name }
+        : row;
+    }),
+  };
 }

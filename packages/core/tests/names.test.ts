@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readSheet } from '../src/layout';
-import { editDistance, findNameMatches, tidyName } from '../src/names';
+import { editDistance, findNameMatches, findNameSplits, tidyName } from '../src/names';
 
 const header = 'Ref,Customer,Phone,Postcode,Total';
 const sheet = (...rows: string[]) => readSheet([header, ...rows].join('\n'));
@@ -142,5 +142,61 @@ describe('clean files', () => {
       'A3,Davod Smith,,,45.00',
     );
     expect(findNameMatches(table, 'Customer').map((m) => m.id)).toEqual(['name:Davod Smith']);
+  });
+});
+
+describe('one name, possibly two customers', () => {
+  const splits = (text: ReturnType<typeof sheet>) =>
+    findNameSplits(text, 'Customer').map((sp) => [
+      sp.name,
+      sp.groups.map((g) => [g.label, g.rows]),
+    ]);
+
+  it('suggests a split when the rows have no contact detail in common, labelled by postcode', () => {
+    const table = sheet(
+      'A1,David Braithwaite,07700 900101,CA8 2DD,10.00',
+      'A2,Grace Holt,07700 900102,M4 1NP,20.00',
+      'A3,David Braithwaite,07700 900101,CA8 2DD,45.00',
+      'A4,David Braithwaite,07700 900999,CA11 7EE,50.00',
+    );
+    expect(splits(table)).toEqual([
+      [
+        'David Braithwaite',
+        [
+          ['CA8 2DD', [2, 4]],
+          ['CA11 7EE', [5]],
+        ],
+      ],
+    ]);
+    expect(findNameSplits(table, 'Customer')[0]?.evidence).toContain(
+      'Two different customers, or one customer whose details changed?',
+    );
+  });
+
+  it('keeps one customer who moved house but kept the same phone', () => {
+    const table = sheet(
+      'A1,David Braithwaite,07700 900101,CA8 2DD,10.00',
+      'A2,David Braithwaite,07700 900101,CA11 7EE,20.00',
+      'A3,Grace Holt,07700 900102,M4 1NP,45.00',
+    );
+    expect(splits(table)).toEqual([]);
+  });
+
+  it('joins rows through a shared detail, even when two rows share nothing directly', () => {
+    const table = sheet(
+      'A1,David Braithwaite,07700 900101,CA8 2DD,10.00',
+      'A2,David Braithwaite,07700 900101,CA11 7EE,20.00',
+      'A3,David Braithwaite,07700 900555,CA11 7EE,45.00',
+    );
+    expect(splits(table)).toEqual([]);
+  });
+
+  it('does not split when only one set of rows has contact details', () => {
+    const table = sheet(
+      'A1,David Braithwaite,07700 900101,CA8 2DD,10.00',
+      'A2,David Braithwaite,,,20.00',
+      'A3,Grace Holt,07700 900102,M4 1NP,45.00',
+    );
+    expect(splits(table)).toEqual([]);
   });
 });
