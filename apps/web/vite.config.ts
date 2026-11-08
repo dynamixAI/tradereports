@@ -34,5 +34,9 @@ export default defineConfig({
   // GitHub Pages serves the site from /tradereports/
   base: '/tradereports/',
   plugins: [react(), securityPolicy()],
-  build: { target: 'es2022' },
+  build: {
+    target: 'es2022',
+    // the 3D part is about 540 kB and loads on its own after the page appears
+    chunkSizeWarningLimit: 600,
+  },
 });
