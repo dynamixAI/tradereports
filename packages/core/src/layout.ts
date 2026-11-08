@@ -139,6 +139,8 @@ function dropTotalRows(table: CsvTable, notes: CsvIssue[]): CsvTable {
   const lastDense = table.rows.reduce((last, row, index) => (dense(row) ? index : last), -1);
 
   const keepRows: number[] = [];
+  // rows already found to be totals, so a later total doesn't count them again
+  const totals = new Set<number>();
   table.rows.forEach((row, index) => {
     const rowNumber = table.rowNumbers[index] ?? index + 2;
     const cells = filled(row).map((header) => row[header] ?? '');
@@ -151,11 +153,19 @@ function dropTotalRows(table: CsvTable, notes: CsvIssue[]): CsvTable {
       const value = parseMoney(row[header] ?? '');
       // zero adds up a column of zeros, which proves nothing
       if (value === null || value === 0) return false;
-      const above = table.rows
-        .slice(0, index)
-        .map((earlier) => parseMoney(earlier[header] ?? '') ?? 0);
-      if (above.filter((amount) => amount !== 0).length < 2) return false;
-      return Math.abs(above.reduce((sum, amount) => sum + amount, 0) - value) <= 1;
+      // records only: an earlier subtotal is not counted again. A total can add up every
+      // record above it, or just the ones since the last subtotal (a month's total)
+      const amounts = (from: number) =>
+        table.rows
+          .slice(from, index)
+          .map((earlier, offset) =>
+            totals.has(from + offset) ? 0 : (parseMoney(earlier[header] ?? '') ?? 0),
+          );
+      const adds = (list: number[]) =>
+        list.filter((amount) => amount !== 0).length >= 2 &&
+        Math.abs(list.reduce((sum, amount) => sum + amount, 0) - value) <= 1;
+      const lastTotal = Math.max(-1, ...[...totals].filter((t) => t < index));
+      return adds(amounts(0)) || adds(amounts(lastTotal + 1));
     });
     // one matching column could be chance, unless it's the last row; two is a pattern
     const isLast = index === table.rows.length - 1;
@@ -175,6 +185,7 @@ function dropTotalRows(table: CsvTable, notes: CsvIssue[]): CsvTable {
     const betweenNote = index <= lastDense && !dense(row) && wordsOnly;
 
     if (labelled || addsUp) {
+      totals.add(index);
       const what = sums[0]
         ? ` (${sums[0]} ${pounds(parseMoney(row[sums[0]] ?? '') ?? 0)} adds up the rows above)`
         : '';

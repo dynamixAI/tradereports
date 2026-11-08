@@ -122,6 +122,35 @@ describe('total rows', () => {
     expect(refs(result)).toEqual(['A1', 'A2', 'A3', 'A4']);
   });
 
+  it('finds a grand total under a subtotal, without counting the subtotal twice', () => {
+    const result = readSheet(
+      [
+        header,
+        ...rows,
+        ',,,,240.00,48.00,288.00,',
+        'A4,2026-04-02,Dan Example,Boiler,300.00,60.00,360.00,No',
+        'A5,2026-04-09,Eve Example,Leak,50.00,10.00,60.00,Yes',
+        'Season billed,,,,590.00,118.00,708.00,',
+      ].join('\n'),
+    );
+    expect(refs(result)).toEqual(['A1', 'A2', 'A3', 'A4', 'A5']);
+  });
+
+  it('finds a section total that adds up only the rows since the last subtotal', () => {
+    const result = readSheet(
+      [
+        header,
+        ...rows,
+        ',,,,240.00,48.00,288.00,',
+        'A4,2026-04-02,Dan Example,Boiler,300.00,60.00,360.00,No',
+        'A5,2026-04-09,Eve Example,Leak,50.00,10.00,60.00,Yes',
+        ',,,,350.00,70.00,420.00,',
+        'A6,2026-05-01,Fay Example,Tap,30.00,6.00,36.00,Yes',
+      ].join('\n'),
+    );
+    expect(refs(result)).toEqual(['A1', 'A2', 'A3', 'A4', 'A5', 'A6']);
+  });
+
   it('does not take a counter column adding up (1 + 2 = 3) as a total', () => {
     const result = readSheet(
       ['No,Who,Amount', '1,Ann,120.00', '2,Bob,96.50', '3,Cat,72.25'].join('\n'),

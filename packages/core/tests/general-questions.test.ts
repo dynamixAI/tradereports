@@ -118,6 +118,50 @@ describe('date questions', () => {
   });
 });
 
+describe('suggested answers', () => {
+  it('suggests paid for a payment method written in the status column', () => {
+    const table = readSheet(
+      [
+        'Ref,Customer,Total,Paid?',
+        'A1,Ann,10.00,Cash handed over',
+        'A2,Bob,20.00,No',
+        'A3,Cat,45.00,BACS 3/4',
+      ].join('\n'),
+    );
+    const answers = acceptSuggested(table, emptyAnswers());
+    expect(answers.status).toEqual({
+      'cash handed over': 'paid',
+      no: 'unpaid',
+      'bacs 3/4': 'paid',
+    });
+  });
+
+  it('suggests none for net and VAT when the file has no VAT', () => {
+    const table = readSheet(
+      [
+        'Ref,Customer,Labour,Parts,Charge',
+        'A1,Ann,100,20,120',
+        'A2,Bob,80,15,95',
+        'A3,Cat,60,40,100',
+      ].join('\n'),
+    );
+    const net = askQuestions(table, emptyAnswers()).find(
+      (q) => q.kind === 'column' && q.field === 'net',
+    );
+    expect(net).toMatchObject({ suggested: null, noneSuggested: true });
+    const answers = acceptSuggested(table, emptyAnswers());
+    expect(answers.columns.net).toBeNull();
+    expect(answers.columns.vat).toBeNull();
+  });
+
+  it('does not suggest none for VAT when the arithmetic found VAT', () => {
+    const vatQuestion = askQuestions(sheet, emptyAnswers()).find(
+      (q) => q.kind === 'column' && q.field === 'vat',
+    );
+    expect(vatQuestion).toMatchObject({ suggested: 'VAT', noneSuggested: false });
+  });
+});
+
 describe('acceptSuggested', () => {
   it('answers what it can and leaves the rest', () => {
     const answers = acceptSuggested(sheet, emptyAnswers());

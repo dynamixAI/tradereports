@@ -27,6 +27,8 @@ export type Question =
       required: boolean;
       // null when there is no suggestion, or the top two are level
       suggested: string | null;
+      // true when the evidence says the file has no such column (no VAT found, say)
+      noneSuggested: boolean;
       options: { header: string; evidence: string[] }[];
     }
   | { kind: 'date-order'; column: string; examples: string[] }
@@ -58,12 +60,18 @@ export function askQuestions(table: CsvTable, answers: Answers): Question[] {
 
   for (const field of FIELDS) {
     if (field in answers.columns) continue;
-    const { best, candidates } = suggestions.fields[field];
+    const { best, tie, candidates } = suggestions.fields[field];
+    const required = REQUIRED_FIELDS.includes(field);
+    // an optional field with nothing in its favour is suggested as "none"; for net and
+    // VAT that also needs the arithmetic to have found no VAT
+    const nothing = !best && !tie && candidates.every((c) => c.score <= 0);
+    const vatField = field === 'net' || field === 'vat';
     questions.push({
       kind: 'column',
       field,
-      required: REQUIRED_FIELDS.includes(field),
+      required,
       suggested: best,
+      noneSuggested: !required && nothing && (!vatField || !suggestions.vatFound),
       options: candidates.map((c) => ({ header: c.header, evidence: c.evidence })),
     });
   }
@@ -76,6 +84,7 @@ export function askQuestions(table: CsvTable, answers: Answers): Question[] {
         field,
         required: true,
         suggested: best,
+        noneSuggested: false,
         options: candidates.map((c) => ({ header: c.header, evidence: c.evidence })),
       });
     }
@@ -122,10 +131,12 @@ export function askQuestions(table: CsvTable, answers: Answers): Question[] {
   return questions;
 }
 
-// A suggestion only; a blank, a payment method or a code we can't read is left to the user.
+// A suggestion only. A payment method written in the status column ("Cash handed over")
+// suggests paid; a blank or a code we can't read is left to the user.
 function suggestMeaning(value: string): StatusMeaning | null {
   const reading = readStatus(value);
   if (reading === 'paid' || reading === 'unpaid' || reading === 'part paid') return reading;
+  if (reading === 'method') return 'paid';
   return null;
 }
 
@@ -166,7 +177,7 @@ export function acceptSuggested(table: CsvTable, answers: Answers): Answers {
   for (let changed = true; changed;) {
     changed = false;
     for (const question of askQuestions(table, current)) {
-      if (question.kind === 'column' && question.suggested !== null) {
+      if (question.kind === 'column' && (question.suggested !== null || question.noneSuggested)) {
         current = {
           ...current,
           columns: { ...current.columns, [question.field]: question.suggested },
