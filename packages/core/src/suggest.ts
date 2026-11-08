@@ -1,7 +1,7 @@
 import type { CsvTable } from './csv';
-import { readYesNo } from './clean';
 import { parseMoney } from './money';
 import { countsUp, scanTable, type ColumnScan } from './scan';
+import { readStatus } from './status';
 
 // Suggest which column holds each invoice field (ADR 0006). Method: a column must first
 // be able to do the job (its values fit), then the ones left are ranked by their header
@@ -133,40 +133,25 @@ const NOT: Partial<Record<Field, string[]>> = {
     'reg',
     'number',
   ],
+  // "how paid", "payment method", "paid by": these say how, not whether
+  status: [
+    'how',
+    'method',
+    'type',
+    'by',
+    'mode',
+    'cash',
+    'bacs',
+    'bank',
+    'card',
+    'cheque',
+    'date',
+    'on',
+  ],
   gross: ['pre', 'before', 'ex', 'exc', 'excl', 'excluding', 'net', 'tax', 'vat'],
 };
 // "inc VAT" is the total and "Total inc" too: a qualifier beats the vat word
 NOT.gross = (NOT.gross ?? []).filter((word) => word !== 'vat' && word !== 'tax');
-
-// words for whether an invoice is paid, and words for how it was paid. "Bank" says it
-// was paid but not whether every unpaid row is marked, so it counts for less.
-const PAID_WORDS = new Set([
-  'paid',
-  'unpaid',
-  'not paid',
-  'part paid',
-  'part-paid',
-  'outstanding',
-  'due',
-  'overdue',
-  'past due',
-  'owed',
-  'owing',
-  'awaiting payment',
-  'pending',
-  'sent',
-  'draft',
-  'chasing',
-]);
-const METHOD_WORDS = new Set([
-  'bank',
-  'cash',
-  'card',
-  'bacs',
-  'cheque',
-  'transfer',
-  'bank transfer',
-]);
 
 // VAT rates to check the arithmetic against: standard and reduced
 const VAT_RATES = [0.2, 0.05];
@@ -245,12 +230,12 @@ export function suggestColumns(table: CsvTable): Suggestions {
     }
 
     const statusShare = statusWords(cells);
-    if (statusShare >= 0.5 && new Set(cells.map((c) => c.toLowerCase())).size <= 10) {
+    if (statusShare >= 0.5 && averageWords(cells) <= 5) {
       add('status', header, nameScore(header, 'status') + statusWords(cells, true), [
         ...name('status'),
-        statusWords(cells, true) < statusShare
+        cells.filter((c) => readStatus(c) === 'method').length > cells.length / 2
           ? `${percent(statusShare)} are words like bank or cash, which say how it was paid.`
-          : `${percent(statusShare)} are words like paid, unpaid, yes or no.`,
+          : `${percent(statusShare)} say paid or unpaid, such as "${cells.find((c) => readStatus(c) !== null && readStatus(c) !== 'method') ?? ''}".`,
       ]);
     }
 
@@ -301,14 +286,23 @@ export function suggestColumns(table: CsvTable): Suggestions {
   const order = [...FIELDS].sort((x, y) => (lists[y][0]?.score ?? 0) - (lists[x][0]?.score ?? 0));
   const taken = new Set<string>();
   const fields = {} as Record<Field, FieldSuggestion>;
-  for (const field of order) {
-    const open = lists[field].filter((c) => !taken.has(c.header));
-    const [first, second] = open;
-    const tie =
-      first !== undefined && second !== undefined && Math.abs(first.score - second.score) < 0.01;
-    const best = first && !tie ? first.header : null;
-    if (best) taken.add(best);
-    fields[field] = { best, tie, candidates: lists[field] };
+  // a tie can settle once another field takes one of the tied columns, so go round
+  // again until nothing changes
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const field of order) {
+      if (fields[field]?.best) continue;
+      const open = lists[field].filter((c) => !taken.has(c.header));
+      const [first, second] = open;
+      const tie =
+        first !== undefined && second !== undefined && Math.abs(first.score - second.score) < 0.01;
+      const best = first && !tie ? first.header : null;
+      if (best) {
+        taken.add(best);
+        changed = true;
+      }
+      fields[field] = { best, tie, candidates: open.length > 0 ? open : lists[field] };
+    }
   }
 
   const missing = REQUIRED.filter((field) => fields[field].best === null && !fields[field].tie);
@@ -407,17 +401,20 @@ function fitsCustomer(scan: ColumnScan, cells: string[]): boolean {
     return false;
   if (statusWords(cells) >= 0.5) return false;
   const letters = cells.filter((c) => /[A-Za-z]/.test(c)).length / cells.length;
+  const digits = cells.filter((c) => /\d/.test(c)).length / cells.length;
+  if (digits >= 0.5) return false;
   return letters >= 0.7 && new Set(cells).size >= 2 && averageWords(cells) <= 6;
 }
 
-// share of values that are status words; method words count half when weighted
+// share of values that read as a status; method words count half when weighted, as
+// "Bank" says how it was paid, not whether every unpaid row is marked
 function statusWords(cells: string[], weighted = false): number {
   if (cells.length === 0) return 0;
   let total = 0;
   for (const cell of cells) {
-    const word = cell.trim().toLowerCase();
-    if (PAID_WORDS.has(word) || readYesNo(cell).origin !== 'unknown') total += 1;
-    else if (METHOD_WORDS.has(word)) total += weighted ? 0.5 : 1;
+    const reading = readStatus(cell);
+    if (reading === 'method') total += weighted ? 0.5 : 1;
+    else if (reading !== null) total += 1;
   }
   return total / cells.length;
 }

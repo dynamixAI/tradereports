@@ -159,6 +159,44 @@ describe('paid or not, and how', () => {
   });
 });
 
+describe('status written as a phrase', () => {
+  it('finds it even with a name that says nothing', () => {
+    const sheet = [
+      'Ref,Customer,Amount,how paid,Col K',
+      'X1,Ann,120.00,Bank,paid 3/4',
+      'X2,Bob,96.50,,chased twice',
+      'X3,Cat,72.25,Cash,Settled (cash)',
+      'X4,Dan,50.00,,Not paid yet',
+      'X5,Eve,61.00,Bank,cleared 12 Jan',
+    ].join('\n');
+    expect(best(sheet, 'status')).toBe('Col K');
+  });
+
+  it('does not take a notes column as the status', () => {
+    const sheet = [
+      'Ref,Customer,Amount,Paid?,Notes',
+      'X1,Ann,120.00,Y,dog in the garden so ring before going round',
+      'X2,Bob,96.50,N,left the key under the mat by the back door',
+      'X3,Cat,72.25,Y,wants a quote for the bathroom next spring',
+    ].join('\n');
+    expect(best(sheet, 'status')).toBe('Paid?');
+  });
+});
+
+describe('customer names and codes', () => {
+  it('does not offer a column of codes as the customer', () => {
+    const sheet = [
+      'Doc,Party,Sub',
+      'QX-01,Ann Example,120.00',
+      'QX-02,Bob Example,96.50',
+      'QX-03,Ann Example,72.25',
+    ].join('\n');
+    const customer = suggest(sheet).fields.customer;
+    expect(customer.best).toBe('Party');
+    expect(customer.candidates.map((c) => c.header)).not.toContain('Doc');
+  });
+});
+
 describe('one money column', () => {
   it('is the total, even with a name that says nothing', () => {
     const sheet = ['Ref,Who,Box 7', 'X1,Ann,120.00', 'X2,Bob,96.50', 'X3,Cat,72.25'].join('\n');

@@ -28,7 +28,26 @@ const NAMES: Record<string, string[]> = {
 };
 const NONSENSE = ['Col A', 'Col B', 'Col C', 'Field 1', 'Field 2', 'X', 'Y', 'Z', 'Box 7', 'Thing'];
 const PEOPLE = ['Ann Example', 'Bob Example', 'Cat Example', 'Dan Example', 'Eve Example'];
-const STATUS = ['Paid', 'Unpaid', 'Yes', 'No', 'Outstanding', 'Bank', 'Cash'];
+const STATUS_WORDS = [
+  'Paid',
+  'paid',
+  'Unpaid',
+  'Yes',
+  'No',
+  'Outstanding',
+  'Settled',
+  'Overdue',
+  'Y',
+  'N',
+];
+const DETAILS = [' 3/4', ' (cash)', ' - rang', ' 12 Jan', ' in full', ' - texted'];
+const METHODS = ['Bank', 'Cash', 'Card', 'BACS', ''];
+
+// a status as people write it: a word, sometimes with a date or a detail after it
+function statusPhrase(r: ReturnType<typeof random>): string {
+  const word = r.pick(STATUS_WORDS);
+  return word.length > 1 && r.next() < 0.4 ? `${word}${r.pick(DETAILS)}` : word;
+}
 
 interface Built {
   text: string;
@@ -50,11 +69,13 @@ function build(seed: number): Built {
   const labour = split ? r.pick(['Labour', 'Time']) : null;
   const parts = split ? r.pick(['Materials', 'Parts']) : null;
 
+  // the status column is sometimes given a name that says nothing
+  const status = r.next() < 0.3 ? takeNonsense() : r.pick(NAMES.status ?? []);
   const columns: { name: string; value: (i: number, money: Money) => string }[] = [
     { name: r.pick(NAMES.ref ?? []), value: (i) => `R${seed}-${i}` },
     { name: r.pick(NAMES.customer ?? []), value: () => r.pick(PEOPLE) },
     { name: r.pick(NAMES.date ?? []), value: () => `${r.int(10, 28)}/0${r.int(1, 9)}/2026` },
-    { name: r.pick(NAMES.status ?? []), value: () => r.pick(STATUS) },
+    { name: status, value: () => statusPhrase(r) },
     { name: gross, value: (_i, m) => pounds(m.gross) },
   ];
   if (net && tax) {
@@ -75,6 +96,12 @@ function build(seed: number): Built {
       value: () => r.pick(['rang twice', 'left a key', 'dog in garden', '']),
     });
   if (r.next() < 0.3) columns.push({ name: 'Job count', value: (i) => String(i) });
+  // a column that says how it was paid, to be mistaken for the status
+  if (r.next() < 0.4)
+    columns.push({
+      name: r.pick(['how paid', 'Payment method', 'Paid by', 'Type']),
+      value: () => r.pick(METHODS),
+    });
 
   // shuffle the column order
   for (let i = columns.length - 1; i > 0; i -= 1) {
@@ -105,6 +132,7 @@ function build(seed: number): Built {
       net,
       vat: tax,
       gross,
+      status,
     },
   };
 }
@@ -131,5 +159,6 @@ describe('suggestions on 200 generated spreadsheets', () => {
     expect(fields.vat.best).toBe(expected.vat);
     expect(fields.gross.best).toBe(expected.gross);
     expect(vatFound).toBe(expected.vat !== null);
+    expect(fields.status.best).toBe(expected.status);
   });
 });
