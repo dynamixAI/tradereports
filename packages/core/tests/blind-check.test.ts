@@ -94,7 +94,7 @@ function convertReport(sheet: ReturnType<typeof readSheet>): string[] {
       return { ...current, status: { ...current.status, [statusKey(q.value)]: 'ignore' } };
     if (q.kind === 'date-order') return { ...current, dateOrder: 'day-first' };
     // repairs are left unanswered here; the second figures below accept them all
-    if (q.kind === 'repair') return current;
+    if (q.kind === 'repair' || q.kind === 'same-customer') return current;
     return { ...current, years: { ...current.years, [q.value]: 2026 } };
   };
   for (let round = 0; round < 3; round += 1) {
@@ -105,9 +105,14 @@ function convertReport(sheet: ReturnType<typeof readSheet>): string[] {
     file: 'blind',
   });
   const repairs = asked.flatMap((q) => (q.kind === 'repair' ? [q.repair] : []));
+  const sameCustomers = asked.flatMap((q) => (q.kind === 'same-customer' ? [q.match] : []));
   const withRepairs = convertSpreadsheet(
     sheet,
-    { ...answers, repairs: Object.fromEntries(repairs.map((r) => [r.id, 'accept' as const])) },
+    {
+      ...answers,
+      repairs: Object.fromEntries(repairs.map((r) => [r.id, 'accept' as const])),
+      names: Object.fromEntries(sameCustomers.map((m) => [m.id, 'same' as const])),
+    },
     { businessId: 'blind', file: 'blind' },
   ).records;
   type Rec = (typeof records)[number];
@@ -115,7 +120,7 @@ function convertReport(sheet: ReturnType<typeof readSheet>): string[] {
     const sum = (amount: (r: Rec) => number) => list.reduce((total, r) => total + amount(r), 0);
     const unknownDue = list.filter((r) => r.duePence.value === null).length;
     return [
-      `  Invoices: ${list.length}`,
+      `  Invoices: ${list.length}  Customers: ${new Set(list.map((r) => r.customerName)).size}`,
       `  Net: ${pounds(sum((r) => r.netPence.value ?? 0))}  VAT: ${pounds(sum((r) => r.taxPence))}  Gross: ${pounds(sum((r) => r.grossPence))}`,
       `  Owed: ${pounds(sum((r) => r.duePence.value ?? 0))}${unknownDue > 0 ? ` (${unknownDue} invoices with unknown amount owed)` : ''}`,
     ];
@@ -136,15 +141,20 @@ function convertReport(sheet: ReturnType<typeof readSheet>): string[] {
           ? `whether dates in "${q.column}" are day first`
           : q.kind === 'repair'
             ? `repair: ${q.repair.action} on row ${q.repair.row}. ${q.repair.evidence.join(' ')}`
-            : `the year for "${q.value}"`;
+            : q.kind === 'same-customer'
+              ? `same customer${q.match.tidyOnly ? ' (tidy)' : ''}: "${q.match.variant}" is "${q.match.canonical}"? Rows ${q.match.rows.join(', ')}. ${q.match.evidence.join(' ')}`
+              : `the year for "${q.value}"`;
   return [
     'Questions the user would be asked:',
     ...(asked.length === 0 ? ['  (none)'] : asked.map((q) => `  - ${describe(q)}`)),
     '',
     `Converted (placeholders used for ${asked.length} unanswered questions):`,
     ...totals(records),
-    ...(repairs.length > 0
-      ? [`With all ${repairs.length} repairs accepted:`, ...totals(withRepairs)]
+    ...(repairs.length + sameCustomers.length > 0
+      ? [
+          `With all ${repairs.length} repairs and ${sameCustomers.length} same-customer matches accepted:`,
+          ...totals(withRepairs),
+        ]
       : []),
     'Checks:',
     ...(issues.length === 0 ? ['  (none)'] : issues.map((i) => `  [${i.kind}] ${i.message}`)),

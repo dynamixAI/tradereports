@@ -12,8 +12,8 @@ import {
   type Known,
   type TaxMode,
 } from '../model';
-import { applyRepairs, findRepairs } from '../repairs';
-import { askQuestions, statusKey, type Answers } from './questions';
+import { findNameMatches } from '../names';
+import { askQuestions, repairedTable, statusKey, type Answers } from './questions';
 
 export interface SpreadsheetOptions {
   businessId: string;
@@ -28,7 +28,9 @@ export function convertSpreadsheet(
   options: SpreadsheetOptions,
 ): ConvertResult<Invoice> {
   // repairs are suggestions; an unanswered one doesn't hold up the rest
-  const open = askQuestions(original, answers).filter((q) => q.kind !== 'repair');
+  const open = askQuestions(original, answers).filter(
+    (q) => q.kind !== 'repair' && q.kind !== 'same-customer',
+  );
   if (open.length > 0) {
     return {
       records: [],
@@ -44,17 +46,26 @@ export function convertSpreadsheet(
 
   const issues: ConvertIssue[] = [];
   // the accepted repairs, applied to a copy; each one is noted against its row
-  const { table, notes } = applyRepairs(
-    original,
-    findRepairs(original),
-    (repair) => answers.repairs[repair.id] === 'accept',
-  );
+  const { table, notes } = repairedTable(original, answers);
   for (const note of notes) {
     issues.push({ kind: 'source-quirk', rows: [note.row], message: `Repaired: ${note.rule}.` });
   }
   const repaired = (rowNumber: number, header: string | null | undefined) =>
     notes.find((n) => n.row === rowNumber && n.header === header)?.rule ?? null;
   const cols = answers.columns;
+  // the spelling to use for each customer the user said is the same as another
+  const sameAs = new Map<string, string>();
+  if (cols.customer) {
+    for (const match of findNameMatches(table, cols.customer)) {
+      if (answers.names[match.id] !== 'same') continue;
+      sameAs.set(match.variant, match.canonical);
+      issues.push({
+        kind: 'source-quirk',
+        rows: match.rows,
+        message: `Same customer: you said "${match.variant}" is "${match.canonical}".`,
+      });
+    }
+  }
   const records: Invoice[] = [];
   const seen = new Map<string, number>();
 
@@ -95,7 +106,8 @@ export function convertSpreadsheet(
       seen.set(number, rowNumber);
     }
 
-    const customer = cell(cols.customer);
+    const typed = cell(cols.customer);
+    const customer = typed ? (sameAs.get(typed) ?? typed) : null;
     if (!customer) {
       issues.push({ kind: 'bad-value', rows: [rowNumber], message: `${label} has no customer.` });
     }

@@ -1,7 +1,8 @@
 import type { CsvTable } from '../csv';
 import { readDate, readDayMonth, type DateOrder } from '../dates';
 import { scanColumn } from '../scan';
-import { findRepairs, type Repair } from '../repairs';
+import { findNameMatches, type NameMatch } from '../names';
+import { applyRepairs, findRepairs, type Repair } from '../repairs';
 import { readStatus } from '../status';
 import { FIELDS, suggestColumns, type Field } from '../suggest';
 
@@ -21,6 +22,8 @@ export interface Answers {
   years: Record<string, number>;
   // repair suggestions (ADR 0007), keyed by repair id; unanswered means not applied
   repairs: Record<string, 'accept' | 'reject'>;
+  // possible same customers, keyed by match id; unanswered means kept apart
+  names: Record<string, 'same' | 'separate'>;
 }
 
 export type Question =
@@ -44,12 +47,14 @@ export type Question =
     }
   | { kind: 'year'; column: string; value: string; suggested: number | null }
   // never blocks converting: an unanswered repair is simply not applied
-  | { kind: 'repair'; repair: Repair };
+  | { kind: 'repair'; repair: Repair }
+  // never blocks converting either: unanswered names are kept apart
+  | { kind: 'same-customer'; match: NameMatch };
 
 export const REQUIRED_FIELDS: Field[] = ['invoiceNumber', 'customer', 'gross'];
 
 export function emptyAnswers(): Answers {
-  return { columns: {}, status: {}, years: {}, repairs: {} };
+  return { columns: {}, status: {}, years: {}, repairs: {}, names: {} };
 }
 
 // status values are matched ignoring case and spaces at the ends; a blank is its own value
@@ -137,6 +142,14 @@ export function askQuestions(table: CsvTable, answers: Answers): Question[] {
     if (!(repair.id in answers.repairs)) questions.push({ kind: 'repair', repair });
   }
 
+  // names are compared after the accepted repairs, as a repair can change a customer cell
+  const customerColumn = answers.columns.customer;
+  if (customerColumn) {
+    for (const match of findNameMatches(repairedTable(table, answers).table, customerColumn)) {
+      if (!(match.id in answers.names)) questions.push({ kind: 'same-customer', match });
+    }
+  }
+
   return questions;
 }
 
@@ -182,6 +195,7 @@ export function acceptSuggested(table: CsvTable, answers: Answers): Answers {
     status: { ...answers.status },
     years: { ...answers.years },
     repairs: { ...answers.repairs },
+    names: { ...answers.names },
     ...(answers.dateOrder ? { dateOrder: answers.dateOrder } : {}),
   };
   for (let changed = true; changed;) {
@@ -206,4 +220,9 @@ export function acceptSuggested(table: CsvTable, answers: Answers): Answers {
     }
   }
   return current;
+}
+
+// The table with the user's accepted repairs applied; the original is not changed.
+export function repairedTable(table: CsvTable, answers: Answers) {
+  return applyRepairs(table, findRepairs(table), (r) => answers.repairs[r.id] === 'accept');
 }

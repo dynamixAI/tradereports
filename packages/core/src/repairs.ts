@@ -49,7 +49,7 @@ export function kindOf(text: string | null): Kind | null {
 }
 
 // the kind most values in a column share, if any
-function columnKind(values: (string | null)[]): Kind | null {
+export function columnKind(values: (string | null)[]): Kind | null {
   const kinds = values.map(kindOf).filter((kind): kind is Kind => kind !== null);
   const filled = values.filter((v) => v !== null && v.trim() !== '').length;
   if (filled === 0) return null;

@@ -210,3 +210,36 @@ describe('repairs', () => {
     expect(result.records[4]?.netPence).toMatchObject({ rule: 'total minus VAT' });
   });
 });
+
+describe('same customer', () => {
+  const rows = [
+    'A1,15/03/2026,David Smith,100.00,20.00,120.00,Yes',
+    'A2,16/03/2026,David Smith,80.00,16.00,96.00,No',
+    'A3,17/03/2026,Grace Holt,50.00,10.00,60.00,Yes',
+    'A4,18/03/2026,Davod Smith,40.00,8.00,48.00,No',
+  ];
+  const table = readSheet([header, ...rows].join('\n'));
+  const base = { ...emptyAnswers(), columns, status };
+
+  it('uses one name when the user says two spellings are the same customer', () => {
+    const result = convertSpreadsheet(
+      table,
+      { ...base, names: { 'name:Davod Smith': 'same' } },
+      options,
+    );
+    expect(result.records.map((r) => r.customerName)).toEqual([
+      'David Smith',
+      'David Smith',
+      'Grace Holt',
+      'David Smith',
+    ]);
+    expect(result.issues.map((i) => i.message)).toContain(
+      'Same customer: you said "Davod Smith" is "David Smith".',
+    );
+  });
+
+  it('keeps them apart when the question is not answered', () => {
+    const result = convertSpreadsheet(table, base, options);
+    expect(result.records[3]?.customerName).toBe('Davod Smith');
+  });
+});
