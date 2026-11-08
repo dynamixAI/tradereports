@@ -28,7 +28,9 @@ type Mistake =
   | 'swap-phone-postcode'
   | 'copy-email'
   | 'swap-email-name'
-  | 'swap-net-total';
+  | 'swap-net-total'
+  | 'shift-left'
+  | 'shift-right';
 
 function build(seed: number) {
   const r = random(seed);
@@ -80,6 +82,8 @@ function build(seed: number) {
       'copy-email',
       'swap-email-name',
       'swap-net-total',
+      'shift-left',
+      'shift-right',
     ]);
     if (mistake === 'move-money') {
       // the net typed into the phone column, with £ so it says what it is
@@ -99,6 +103,16 @@ function build(seed: number) {
     } else if (mistake === 'swap-net-total') {
       [row[at('Net')], row[at('Total')]] = [row[at('Total')] ?? '', row[at('Net')] ?? ''];
       expected.push(`swap:${sheetRow}:Net:Total`);
+    } else if (mistake === 'shift-left') {
+      // a stray empty cell typed before the job or the phone pushes the rest right
+      // a stray cell right before Net leaves every money value under another money column
+      const where = r.pick(['Job', 'Phone', 'Net']);
+      row.splice(at(where), 0, '');
+      expected.push(`shift:${sheetRow}:${where}:left`);
+    } else if (mistake === 'shift-right' && row[at('Email')]) {
+      // the phone left out pulls the rest left
+      row.splice(at('Phone'), 1);
+      expected.push(`shift:${sheetRow}:Phone:right`);
     } else if (mistake === 'copy-email' && row[at('Email')]) {
       row[at('Phone')] = row[at('Email')] ?? '';
       expected.push(`remove-copy:${sheetRow}:Phone`);

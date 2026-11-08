@@ -217,6 +217,7 @@ function dropTotalRows(table: CsvTable, notes: CsvIssue[]): CsvTable {
     ...table,
     rows: keepRows.map((index) => table.rows[index]).filter((row) => row !== undefined),
     rowNumbers: keepRows.map((index) => table.rowNumbers[index] ?? index + 2),
+    overflow: keepRows.map((index) => table.overflow?.[index] ?? []),
   };
 }
 

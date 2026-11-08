@@ -13,7 +13,7 @@ export type Kind = 'email' | 'phone' | 'postcode' | 'date' | 'money';
 export interface Repair {
   // the same file always gives the same id, so answers can be saved and reused
   id: string;
-  action: 'move' | 'swap' | 'remove-copy';
+  action: 'move' | 'swap' | 'remove-copy' | 'shift';
   // spreadsheet row
   row: number;
   from: string;
@@ -23,6 +23,8 @@ export interface Repair {
   other: string | null;
   // similar repairs share a group, so they can be accepted together
   group: string;
+  // for a shift, every cell of the row as it would be once put back
+  cells?: Record<string, string | null>;
   evidence: string[];
 }
 
@@ -86,10 +88,13 @@ export function findRepairs(table: CsvTable): Repair[] {
     return { header, values, kind: columnKind(values) };
   });
   const kindOfColumn = new Map(columns.map((c) => [c.header, c.kind]));
-  const repairs: Repair[] = [];
+  const repairs: Repair[] = findShifts(table, columns);
+  const shifted = new Set(repairs.map((r) => r.row));
 
   table.rows.forEach((row, index) => {
     const rowNumber = table.rowNumbers[index] ?? index + 2;
+    // a shifted row is put back as a whole, not cell by cell
+    if (shifted.has(rowNumber)) return;
     const cell = (header: string) => row[header] ?? null;
     const used = new Set<string>();
     // cells that hold a copy will be emptied, so something else may belong there
@@ -192,21 +197,116 @@ export function findRepairs(table: CsvTable): Repair[] {
   return repairs;
 }
 
-// Two money cells swapped on a row (net and total, say) look fine one by one; only the
-// sum shows it. Find the sum that holds on most rows, and on a row where it fails, try
-// swapping two of its cells. Suggest the swap only if it makes the sum hold.
-function moneySwaps(
+// A shifted row: from some column on, every value sits one column out, after a stray
+// extra cell (values pushed right) or a missing one (values pulled left). Suggested only
+// when putting them back makes nearly every value that says what it is fit its column.
+function findShifts(table: CsvTable, columns: { header: string; kind: Kind | null }[]): Repair[] {
+  const typed = columns.map((c) => c.kind);
+  const fits = (values: (string | null)[]) =>
+    values.filter((v, j) => v !== null && typed[j] !== null && kindOf(v) === typed[j]).length;
+  const said = (values: (string | null)[]) =>
+    values.filter((v, j) => v !== null && typed[j] !== null && kindOf(v) !== null).length;
+
+  // money columns side by side all look like money however a row is shifted, so the sum
+  // that holds on most rows is the evidence there: holding after a shift counts as two
+  const sum = commonSum(table, columns);
+  const at = (header: string) => columns.findIndex((c) => c.header === header);
+  const adds = (values: (string | null)[]) => {
+    if (!sum) return false;
+    const money = (h: string) => parseMoney(values[at(h)] ?? '');
+    return holds(money(sum.a), money(sum.b), money(sum.c));
+  };
+  const score = (values: (string | null)[]) => fits(values) + (adds(values) ? 2 : 0);
+
+  const shifts: Repair[] = [];
+  table.rows.forEach((row, index) => {
+    const rowNumber = table.rowNumbers[index] ?? index + 2;
+    const values = columns.map((c) => row[c.header] ?? null);
+    const beyond = table.overflow?.[index] ?? [];
+    const before = score(values);
+
+    let best: {
+      values: (string | null)[];
+      from: number;
+      way: 'left' | 'right';
+      fit: number;
+    } | null = null;
+    for (let from = 0; from < columns.length; from += 1) {
+      // pushed right by a stray cell: take each value from one column further on
+      const left = values.map((v, j) =>
+        j < from ? v : j + 1 < values.length ? (values[j + 1] ?? null) : beyond[0] || null,
+      );
+      // pulled left by a missing cell: take each value from one column back
+      const right = values.map((v, j) =>
+        j < from ? v : j === from ? null : (values[j - 1] ?? null),
+      );
+      for (const [way, candidate] of [
+        ['left', left],
+        ['right', right],
+      ] as const) {
+        const fit = score(candidate);
+        // at least two more values fit (or the sum now adds up), and nearly all that say
+        // what they are
+        if (fit < before + 2 || fits(candidate) < 0.8 * said(candidate)) continue;
+        // on a tie, a stray extra cell is usually the empty one typed by mistake, so start
+        // there; otherwise the latest start, the smallest change that explains the row
+        const strayHere = way === 'left' && values[from] === null;
+        const strayBest = best?.way === 'left' && values[best.from] === null;
+        if (
+          !best ||
+          fit > best.fit ||
+          (fit === best.fit && strayHere && !strayBest) ||
+          (fit === best.fit && strayHere === strayBest && from > best.from)
+        ) {
+          best = { values: candidate, from, way, fit };
+        }
+      }
+    }
+    if (!best) return;
+
+    const start = columns[best.from]?.header ?? '';
+    const cells = Object.fromEntries(columns.map((c, j) => [c.header, best?.values[j] ?? null]));
+    const lost =
+      best.way === 'left' && beyond[0]
+        ? [`The last value, "${beyond[0]}", was beyond the last column.`]
+        : [];
+    shifts.push({
+      id: `shift:${rowNumber}:${start}:${best.way}`,
+      action: 'shift',
+      row: rowNumber,
+      from: start,
+      to: '',
+      value: '',
+      other: null,
+      group: 'shifted rows',
+      cells,
+      evidence: [
+        best.way === 'left'
+          ? `Row ${rowNumber}: from "${start}" on, each value sits one column to the right of where it belongs, as if an extra cell was typed.`
+          : `Row ${rowNumber}: from "${start}" on, each value sits one column to the left of where it belongs, as if a cell was missed.`,
+        adds(best.values) && !adds(values)
+          ? `Moving them back makes ${sum?.a ?? ''} + ${sum?.b ?? ''} = ${sum?.c ?? ''} add up on this row, as on ${sum?.rows ?? 0} other rows.`
+          : `Moving them back puts ${fits(best.values)} values where they fit, against ${fits(values)} now.`,
+        ...lost,
+        ...(best.way === 'right' ? [`"${start}" would then be empty.`] : []),
+      ],
+    });
+  });
+  return shifts;
+}
+
+// a + b = c, with neither part zero, to within a penny
+const holds = (x: number | null, y: number | null, z: number | null) =>
+  x !== null && y !== null && z !== null && x !== 0 && y !== 0 && Math.abs(x + y - z) <= 1;
+
+// The sum a + b = c (net + VAT = total, say) that holds on most rows with all three filled.
+function commonSum(
   table: CsvTable,
   columns: { header: string; kind: Kind | null }[],
-  found: Repair[],
-): Repair[] {
-  const money = columns.filter((c) => c.kind === 'money').map((c) => c.header);
+): { a: string; b: string; c: string; rows: number } | null {
+  const money = columns.filter((col) => col.kind === 'money').map((col) => col.header);
   const amount = (row: Record<string, string | null>, header: string) =>
     parseMoney(row[header] ?? '');
-  const holds = (x: number | null, y: number | null, z: number | null) =>
-    x !== null && y !== null && z !== null && x !== 0 && y !== 0 && Math.abs(x + y - z) <= 1;
-
-  // the sum a + b = c that holds on most rows with all three filled
   let best: { a: string; b: string; c: string; rows: number } | null = null;
   for (const c of money) {
     for (const a of money) {
@@ -224,16 +324,31 @@ function moneySwaps(
       }
     }
   }
+  return best;
+}
+
+// Two money cells swapped on a row (net and total, say) look fine one by one; only the
+// sum shows it. Find the sum that holds on most rows, and on a row where it fails, try
+// swapping two of its cells. Suggest the swap only if it makes the sum hold.
+function moneySwaps(
+  table: CsvTable,
+  columns: { header: string; kind: Kind | null }[],
+  found: Repair[],
+): Repair[] {
+  const amount = (row: Record<string, string | null>, header: string) =>
+    parseMoney(row[header] ?? '');
+  const best = commonSum(table, columns);
   if (!best) return [];
   const { a, b, c, rows: agreeing } = best;
   const busy = new Set(found.flatMap((r) => [`${r.row}:${r.from}`, `${r.row}:${r.to}`]));
+  const shiftedRows = new Set(found.filter((r) => r.action === 'shift').map((r) => r.row));
 
   const swaps: Repair[] = [];
   table.rows.forEach((row, index) => {
     const rowNumber = table.rowNumbers[index] ?? index + 2;
     const [x, y, z] = [amount(row, a), amount(row, b), amount(row, c)];
     if (x === null || y === null || z === null || holds(x, y, z)) return;
-    if ([a, b, c].some((h) => busy.has(`${rowNumber}:${h}`))) return;
+    if (shiftedRows.has(rowNumber) || [a, b, c].some((h) => busy.has(`${rowNumber}:${h}`))) return;
     // a + b is the same either way round, so only a swap with the total can help
     const tries: [string, string, boolean][] = [
       [a, c, holds(z, y, x)],
@@ -312,6 +427,11 @@ export function applyRepairs(
         header: repair.to,
         rule: `you moved ${repair.value} from ${repair.from} to ${repair.to} on row ${repair.row}`,
       });
+    } else if (repair.action === 'shift' && repair.cells) {
+      Object.assign(row, repair.cells);
+      for (const header of Object.keys(repair.cells)) {
+        notes.push({ row: repair.row, header, rule: `you put back the shifted row ${repair.row}` });
+      }
     } else if (repair.action === 'swap') {
       [row[repair.from], row[repair.to]] = [row[repair.to] ?? null, row[repair.from] ?? null];
       const rule = `you swapped ${repair.from} and ${repair.to} on row ${repair.row}`;

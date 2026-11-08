@@ -192,3 +192,76 @@ describe('applyRepairs', () => {
     expect(findRepairs(table).map((r) => r.id)).toEqual(repairs.map((r) => r.id));
   });
 });
+
+describe('shifted rows', () => {
+  it('puts back a row pushed right by a stray cell, using the value beyond the last column', () => {
+    const table = sheet('A6,Fay Example,,07700 900106,fay@example.com,OL1 9CC,10.00,2.00,12.00');
+    const repairs = findRepairs(table);
+    expect(repairs.map((r) => r.id)).toEqual(['shift:7:Phone:left']);
+    expect(repairs[0]?.evidence).toContain('The last value, "12.00", was beyond the last column.');
+    const { table: fixed } = applyRepairs(table, repairs, () => true);
+    expect(fixed.rows[5]).toMatchObject({
+      Customer: 'Fay Example',
+      Phone: '07700 900106',
+      Email: 'fay@example.com',
+      Postcode: 'OL1 9CC',
+      Net: '10.00',
+      VAT: '2.00',
+      Total: '12.00',
+    });
+  });
+
+  it('puts back a row pulled left by a missing cell, leaving that cell empty', () => {
+    const table = sheet('A6,Fay Example,fay@example.com,OL1 9CC,10.00,2.00,12.00');
+    const repairs = findRepairs(table);
+    expect(repairs.map((r) => r.id)).toEqual(['shift:7:Phone:right']);
+    const { table: fixed } = applyRepairs(table, repairs, () => true);
+    expect(fixed.rows[5]).toMatchObject({ Phone: null, Email: 'fay@example.com', Total: '12.00' });
+  });
+
+  it('keeps a text value when the stray cell is just before it', () => {
+    const shiftedHeader = 'Ref,Customer,Job,Phone,Email,Total';
+    const rows = [
+      'A1,Ann,Fit tap,07700 900101,ann@example.com,120.00',
+      'A2,Bob,Leak,07700 900102,bob@example.com,96.00',
+      'A3,Cat,Service,07700 900103,cat@example.com,60.00',
+      'A4,Dan,Rewire,07700 900104,dan@example.com,48.00',
+      'A5,Eve,,Boiler,07700 900105,eve@example.com,36.00',
+    ];
+    const table = readSheet([shiftedHeader, ...rows].join('\n'));
+    const { table: fixed } = applyRepairs(table, findRepairs(table), () => true);
+    expect(fixed.rows[4]).toMatchObject({ Job: 'Boiler', Phone: '07700 900105', Total: '36.00' });
+  });
+
+  it('finds a shift across money columns side by side, from the sum', () => {
+    const moneyHeader = 'Ref,Customer,Phone,Job,Net,VAT,Total,Notes';
+    const rows = [
+      'A1,Ann,07700 900101,Fit tap,100.00,20.00,120.00,',
+      'A2,Bob,07700 900102,Leak,80.00,16.00,96.00,',
+      'A3,Cat,07700 900103,Service,50.00,10.00,60.00,',
+      'A4,Dan,07700 900104,Boiler,40.00,8.00,48.00,',
+      // a stray cell before the job: the net sits under VAT and the VAT under Total
+      'A5,Eve,07700 900105,,Rewire,300.00,60.00,360.00,paid cash',
+    ];
+    const table = readSheet([moneyHeader, ...rows].join('\n'));
+    const repairs = findRepairs(table);
+    expect(repairs.map((r) => r.id)).toEqual(['shift:6:Job:left']);
+    expect(repairs[0]?.evidence).toContain(
+      'Moving them back makes Net + VAT = Total add up on this row, as on 4 other rows.',
+    );
+    const { table: fixed } = applyRepairs(table, repairs, () => true);
+    expect(fixed.rows[4]).toMatchObject({
+      Job: 'Rewire',
+      Net: '300.00',
+      VAT: '60.00',
+      Total: '360.00',
+      Notes: 'paid cash',
+    });
+  });
+
+  it('uses a single move, not a shift, for one value out of place', () => {
+    expect(summary(sheet('A6,fay@example.com,07700 900106,,OL1 9CC,10.00,2.00,12.00'))).toEqual([
+      'move Customer -> Email',
+    ]);
+  });
+});
