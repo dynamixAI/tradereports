@@ -29,6 +29,8 @@ export interface CsvTable {
   // spreadsheet row number of each entry in rows, same order
   rowNumbers: number[];
   issues: CsvIssue[];
+  // values beyond the last column, same order as rows, so a shifted row can be put back
+  overflow?: string[][];
 }
 
 // trim a cell and turn "nothing here" markers into null
@@ -79,6 +81,12 @@ export function readCsv(text: string, options: ReadCsvOptions = {}): CsvTable {
 
   const headers = uniqueHeaders(headerRecord.cells, issues);
 
+  const overflow = dataRecords.map(({ cells }) => {
+    const beyond = cells.slice(headers.length).map((cell) => cell.trim());
+    while (beyond.length > 0 && beyond[beyond.length - 1] === '') beyond.pop();
+    return beyond;
+  });
+
   const rows = dataRecords.map(({ cells, row }) => {
     if (cells.length < headers.length) {
       issues.push({
@@ -106,7 +114,7 @@ export function readCsv(text: string, options: ReadCsvOptions = {}): CsvTable {
 
   const rowNumbers = dataRecords.map(({ row }) => row);
 
-  return { headers, rows, rowNumbers, issues };
+  return { headers, rows, rowNumbers, issues, overflow };
 }
 
 // trim headers, name blank ones and number repeats so every column has its own key
