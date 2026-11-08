@@ -6,7 +6,7 @@ import { readYesNo } from './clean';
 export type StatusReading = 'paid' | 'unpaid' | 'part paid' | 'method' | null;
 
 // checked in this order, so "not paid" and "part paid" are never read as "paid"
-const PART = /\b(part[ -]?paid|part payment|deposit (paid|received)|partial)\b/i;
+const PART = /\b(part[ -]?paid|part[ -]?payment|deposit (paid|received)|partial)\b/i;
 const UNPAID =
   /\b(unpaid|not paid|not yet paid|outstanding|overdue|owed|owes|owing|due|past due|pending|awaiting|chased|chasing|to chase|late)\b/i;
 const PAID = /\b(paid|settled|cleared|received|in full|done)\b/i;
@@ -17,6 +17,9 @@ export function readStatus(text: string | null): StatusReading {
   if (!text) return null;
   const cell = text.trim();
   if (cell === '') return null;
+  // ticks and crosses, as people mark a list; a plain x is left alone, as some use it for done
+  if (/^[✓✔☑✅]/u.test(cell)) return 'paid';
+  if (/^[✗✘❌]/u.test(cell)) return 'unpaid';
   const yesNo = readYesNo(cell);
   if (yesNo.origin !== 'unknown') return yesNo.value ? 'paid' : 'unpaid';
   if (PART.test(cell)) return 'part paid';

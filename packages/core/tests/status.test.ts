@@ -19,13 +19,18 @@ describe('readStatus', () => {
     ['n', 'unpaid'],
     ['part-paid', 'part paid'],
     ['Part paid (deposit)', 'part paid'],
+    ['✔', 'paid'],
+    ['✅ 3 Mar', 'paid'],
+    ['✘', 'unpaid'],
+    ['❌ chased', 'unpaid'],
+    ['Part-payment received', 'part paid'],
     ['Bank', 'method'],
     ['cheque', 'method'],
   ])('reads "%s" as %s', (text, expected) => {
     expect(readStatus(text)).toBe(expected);
   });
 
-  it.each(['', '30 days', 'see notes', 'Boiler service', 'Prepaid card topped up'])(
+  it.each(['', '30 days', 'see notes', 'Boiler service', 'Prepaid card topped up', 'x', 'Net 30'])(
     'does not read "%s" as a status',
     (text) => {
       expect(readStatus(text)).not.toBe('paid');

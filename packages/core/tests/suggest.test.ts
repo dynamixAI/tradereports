@@ -183,6 +183,47 @@ describe('status written as a phrase', () => {
   });
 });
 
+describe('status as codes, ticks or long notes', () => {
+  const sheet = (statusHeader: string, values: string[], decoy: string, decoys: string[]) =>
+    [
+      `Ref,Customer,Amount,${decoy},${statusHeader}`,
+      ...values.map(
+        (v, i) =>
+          `X${i},Customer ${'ABCDEFGH'[i] ?? ''},${(60 + i).toFixed(2)},${decoys[i % decoys.length] ?? ''},${v}`,
+      ),
+    ].join('\n');
+
+  it('takes a column of short codes over a payment method column', () => {
+    const text = sheet('Flag', ['PD', 'OS', 'PD', 'PP', 'OS', 'PD'], 'Paid via', [
+      'Bank',
+      'Cash',
+      'Card',
+    ]);
+    const status = suggest(text).fields.status;
+    expect(status.best).toBe('Flag');
+    expect(status.candidates[0]?.evidence.join(' ')).toContain("You'll be asked what each means.");
+  });
+
+  it('takes a column of ticks and crosses', () => {
+    expect(
+      best(sheet('Chk', ['✔', '✘', '✔', '✔', '✘'], 'Notes', ['rang', 'left key']), 'status'),
+    ).toBe('Chk');
+  });
+
+  it('takes long notes that mostly say paid or not, over payment terms', () => {
+    const notes = [
+      'Paid by cheque when we finished on the 3rd',
+      'chased again on Monday, says next week',
+      'settled in full at the door',
+      'still owes for the second visit to the loft',
+      'Received the money by transfer 14/02',
+    ];
+    expect(
+      best(sheet('Progress', notes, 'Terms', ['Net 30', 'COD', 'Due on receipt']), 'status'),
+    ).toBe('Progress');
+  });
+});
+
 describe('customer names and codes', () => {
   it('does not offer a column of codes as the customer', () => {
     const sheet = [

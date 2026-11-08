@@ -73,7 +73,7 @@ const NAMES: Record<Field, string[]> = {
     'due',
     'price',
   ],
-  status: ['status', 'paid', 'received', 'settled', 'payment'],
+  status: ['status', 'state', 'paid', 'received', 'settled', 'cleared', 'payment'],
 };
 
 // header words that point away from a field
@@ -147,6 +147,10 @@ const NOT: Partial<Record<Field, string[]>> = {
     'cheque',
     'date',
     'on',
+    'terms',
+    'term',
+    'via',
+    'using',
   ],
   gross: ['pre', 'before', 'ex', 'exc', 'excl', 'excluding', 'net', 'tax', 'vat'],
 };
@@ -229,14 +233,25 @@ export function suggestColumns(table: CsvTable): Suggestions {
       ]);
     }
 
+    // a status is read from its words, or recognised by its shape: a few short codes
+    // that repeat (SET, DUE, PD), whose meaning the user gives
     const statusShare = statusWords(cells);
-    if (statusShare >= 0.5 && averageWords(cells) <= 5) {
-      add('status', header, nameScore(header, 'status') + statusWords(cells, true), [
-        ...name('status'),
-        cells.filter((c) => readStatus(c) === 'method').length > cells.length / 2
-          ? `${percent(statusShare)} are words like bank or cash, which say how it was paid.`
-          : `${percent(statusShare)} say paid or unpaid, such as "${cells.find((c) => readStatus(c) !== null && readStatus(c) !== 'method') ?? ''}".`,
-      ]);
+    const codes = shortCodes(cells);
+    if (statusShare >= 0.5 || codes) {
+      const methods = cells.filter((c) => readStatus(c) === 'method').length;
+      const evidence = [...name('status')];
+      if (statusShare >= 0.5)
+        evidence.push(
+          methods > cells.length / 2
+            ? `${percent(statusShare)} are words like bank or cash, which say how it was paid.`
+            : `${percent(statusShare)} say paid or unpaid, such as "${cells.find((c) => readStatus(c) !== null && readStatus(c) !== 'method') ?? ''}".`,
+        );
+      if (codes)
+        evidence.push(
+          `A few short codes that repeat (${[...new Set(cells)].slice(0, 4).join(', ')}), like a status. You'll be asked what each means.`,
+        );
+      const score = nameScore(header, 'status') + 2 * statusWords(cells, true) + (codes ? 0.5 : 0);
+      add('status', header, score, evidence);
     }
 
     // money: mostly amounts, and not a run of numbers counting up
@@ -413,10 +428,25 @@ function statusWords(cells: string[], weighted = false): number {
   let total = 0;
   for (const cell of cells) {
     const reading = readStatus(cell);
-    if (reading === 'method') total += weighted ? 0.5 : 1;
+    if (reading === 'method') total += weighted ? 0.25 : 1;
     else if (reading !== null) total += 1;
   }
   return total / cells.length;
+}
+
+// 2 to 8 different values, each 4 characters or fewer, and repeating: PD, OS, SET, ✓
+function shortCodes(cells: string[]): boolean {
+  const distinct = new Set(cells.map((c) => c.trim()));
+  return (
+    cells.length >= 4 &&
+    distinct.size >= 2 &&
+    distinct.size <= 8 &&
+    distinct.size < cells.length &&
+    // codes we can't read; known payment methods (Bank, Cash) say how, not whether
+    [...distinct].every(
+      (c) => [...c].length <= 4 && !/^\d+([.,]\d+)?$/.test(c) && readStatus(c) !== 'method',
+    )
+  );
 }
 
 // share of values with the most common shape once digits are ignored: "NSH-26-001" -> "nsh-9-9"

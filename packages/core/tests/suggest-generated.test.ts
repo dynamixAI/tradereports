@@ -43,6 +43,31 @@ const STATUS_WORDS = [
 const DETAILS = [' 3/4', ' (cash)', ' - rang', ' 12 Jan', ' in full', ' - texted'];
 const METHODS = ['Bank', 'Cash', 'Card', 'BACS', ''];
 
+// the ways people write a status, one style per file
+type StatusStyle = 'words' | 'codes' | 'ticks' | 'notes';
+const CODE_SETS = [
+  ['PD', 'OS', 'PP'],
+  ['SET', 'DUE', 'REM'],
+  ['P', 'U'],
+  ['OK', 'O/S', 'CHS'],
+];
+const NOTE_PARTS = [
+  'Paid by cheque',
+  'chased on the phone',
+  'Settled in cash',
+  'still owes',
+  'Received by transfer',
+  'awaiting the landlord',
+];
+
+function statusValue(r: ReturnType<typeof random>, style: StatusStyle, codes: string[]): string {
+  if (style === 'codes') return r.pick(codes);
+  if (style === 'ticks') return r.pick(['✓', '✗', '✓']);
+  if (style === 'notes')
+    return `${r.pick(NOTE_PARTS)} ${r.pick(['on the 3rd', 'last week', '12/03', 'after the job'])}`;
+  return statusPhrase(r);
+}
+
 // a status as people write it: a word, sometimes with a date or a detail after it
 function statusPhrase(r: ReturnType<typeof random>): string {
   const word = r.pick(STATUS_WORDS);
@@ -71,11 +96,13 @@ function build(seed: number): Built {
 
   // the status column is sometimes given a name that says nothing
   const status = r.next() < 0.3 ? takeNonsense() : r.pick(NAMES.status ?? []);
+  const style = r.pick<StatusStyle>(['words', 'words', 'codes', 'ticks', 'notes']);
+  const codeSet = r.pick(CODE_SETS);
   const columns: { name: string; value: (i: number, money: Money) => string }[] = [
     { name: r.pick(NAMES.ref ?? []), value: (i) => `R${seed}-${i}` },
     { name: r.pick(NAMES.customer ?? []), value: () => r.pick(PEOPLE) },
     { name: r.pick(NAMES.date ?? []), value: () => `${r.int(10, 28)}/0${r.int(1, 9)}/2026` },
-    { name: status, value: () => statusPhrase(r) },
+    { name: status, value: () => statusValue(r, style, codeSet) },
     { name: gross, value: (_i, m) => pounds(m.gross) },
   ];
   if (net && tax) {
@@ -96,6 +123,12 @@ function build(seed: number): Built {
       value: () => r.pick(['rang twice', 'left a key', 'dog in garden', '']),
     });
   if (r.next() < 0.3) columns.push({ name: 'Job count', value: (i) => String(i) });
+  // payment terms, also easy to mistake for the status
+  if (r.next() < 0.3)
+    columns.push({
+      name: r.pick(['Terms', 'terms', 'Pay terms']),
+      value: () => r.pick(['Net 30', 'COD', 'Net 14', 'Due on receipt']),
+    });
   // a column that says how it was paid, to be mistaken for the status
   if (r.next() < 0.4)
     columns.push({
