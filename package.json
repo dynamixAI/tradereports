@@ -13,12 +13,13 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p packages/core --noEmit",
+    "typecheck": "tsc -p packages/core --noEmit && tsc -p apps/web --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
+    "build": "npm run build -w apps/web"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
