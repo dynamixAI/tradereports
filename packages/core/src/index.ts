@@ -11,3 +11,5 @@ export { moneyOwed } from './reports/owed';
 export * from './clean';
 export { convertTradifyCustomers } from './tradify/customers';
 export { convertJobberClients } from './jobber/clients';
+export { convertJobberQuotes } from './jobber/quotes';
+export { convertTradifyQuotes } from './tradify/quotes';
