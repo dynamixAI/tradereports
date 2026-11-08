@@ -1,6 +1,7 @@
 import type { CsvRow, CsvTable } from '../csv';
 import { pounds, workOutTax } from '../invoice-checks';
 import { parseMoney } from '../money';
+import { readJobberDate as readDate, readLineItems } from './shared';
 import {
   derived,
   stated,
@@ -10,7 +11,6 @@ import {
   type Invoice,
   type InvoiceStatus,
   type Known,
-  type Line,
 } from '../model';
 
 // Jobber's own status words, as seen in real exports
@@ -20,27 +20,6 @@ const STATUSES: Record<string, InvoiceStatus> = {
   'Past Due': 'overdue',
   Paid: 'paid',
 };
-
-const MONTHS: Record<string, string> = {
-  Jan: '01',
-  Feb: '02',
-  Mar: '03',
-  Apr: '04',
-  May: '05',
-  Jun: '06',
-  Jul: '07',
-  Aug: '08',
-  Sep: '09',
-  Oct: '10',
-  Nov: '11',
-  Dec: '12',
-};
-
-// "Nov 03, 2026"
-const JOBBER_DATE = /^([A-Z][a-z]{2}) (\d{2}), (\d{4})$/;
-
-// one item inside the "Line items" cell: "Leak Repair (2, £240.00)"
-const LINE_ITEM = /(.+?) \((\d+(?:\.\d+)?), £([\d,]+\.\d{2})\)(?:, |$)/g;
 
 // a UK account still shows "($)" in money headers; accept "(£)" in case Jobber fixes it
 const MONEY_SUFFIXES = [' ($)', ' (£)'];
@@ -236,65 +215,6 @@ function workOutStatus(
     return derived('overdue', 'Jobber said Awaiting Payment, and the due date has passed since');
   }
   return stated(status);
-}
-
-// "A (2, £240.00), B (1, £85.00)" -> lines; the amount is the line total, not the unit price
-function readLineItems(
-  text: string | null | undefined,
-  number: string,
-  rows: number[],
-  issues: ConvertIssue[],
-): Line[] {
-  if (!text) return [];
-  const lines: Line[] = [];
-  let consumed = 0;
-  for (const match of text.matchAll(LINE_ITEM)) {
-    const [whole, name, quantityText, amountText] = match;
-    // a gap means part of the cell didn't match, so the lines can't be trusted
-    if (match.index !== consumed) break;
-    consumed += whole.length;
-    const quantity = Number(quantityText);
-    const amount = parseMoney(amountText ?? '') ?? 0;
-    lines.push({
-      description: name ?? null,
-      quantity,
-      unitPricePence: quantity > 0 ? Math.round(amount / quantity) : amount,
-      unitCostPence: unknown('the invoices report has no cost column'),
-      // the cell doesn't say which lines carry VAT
-      taxRateLabel: null,
-      taxRatePercent: null,
-      amountPence: amount,
-    });
-  }
-  if (consumed !== text.length) {
-    issues.push({
-      kind: 'bad-value',
-      rows,
-      message: `${number}: couldn't read the line items ("${text}").`,
-    });
-    return [];
-  }
-  return lines;
-}
-
-// "Nov 03, 2026" -> "2026-11-03"; "-" has already become null
-function readDate(
-  value: string | null | undefined,
-  number: string,
-  column: string,
-  rows: number[],
-  issues: ConvertIssue[],
-): string | null {
-  if (!value) return null;
-  const match = JOBBER_DATE.exec(value);
-  const month = match ? MONTHS[match[1] ?? ''] : undefined;
-  if (match && month) return `${match[3]}-${month}-${match[2]}`;
-  issues.push({
-    kind: 'bad-value',
-    rows,
-    message: `${number}: "${column}" is not a date we can read (${value}).`,
-  });
-  return null;
 }
 
 // When every paid invoice was marked paid on one day, that's usually the day the data was

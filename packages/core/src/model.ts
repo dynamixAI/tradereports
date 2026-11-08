@@ -70,6 +70,33 @@ export interface Invoice {
   source: SourceRef;
 }
 
+export type QuoteStatus = 'draft' | 'awaiting_response' | 'accepted' | 'declined' | 'cancelled';
+
+export interface Quote {
+  businessId: string;
+  // text, never a number: "QT00001", "130"
+  number: string;
+  customerName: string | null;
+  jobNumbers: string[];
+  // YYYY-MM-DD
+  quoteDate: string | null;
+  expiryDate: string | null;
+  sentDate: string | null;
+  acceptedDate: string | null;
+  status: Known<QuoteStatus>;
+  taxMode: Known<TaxMode>;
+  // after discount, before VAT
+  netPence: Known<number>;
+  discountPence: number;
+  taxPence: Known<number>;
+  grossPence: number;
+  costPence: Known<number>;
+  // net minus cost
+  grossProfitPence: Known<number>;
+  lines: Line[];
+  source: SourceRef;
+}
+
 // an address as the file gave it, plus cleaned versions for grouping by area
 export interface Address {
   street: string | null;
