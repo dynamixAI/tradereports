@@ -82,7 +82,11 @@ export interface Detection {
   message: string;
 }
 
-const LABELS: Record<SourceTool, string> = { jobber: 'Jobber', tradify: 'Tradify' };
+const LABELS: Record<SourceTool, string> = {
+  jobber: 'Jobber',
+  tradify: 'Tradify',
+  spreadsheet: 'your own spreadsheet',
+};
 
 // Say which tool and file a CSV came from, from its headers alone.
 export function detectFile(headers: string[]): Detection {

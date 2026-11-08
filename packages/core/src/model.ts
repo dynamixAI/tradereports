@@ -22,7 +22,8 @@ export function unknown<T>(reason: string): Known<T> {
   return { origin: 'unknown', value: null, reason };
 }
 
-export type SourceTool = 'jobber' | 'tradify';
+// 'spreadsheet' is a home-made file the user matched by hand
+export type SourceTool = 'jobber' | 'tradify' | 'spreadsheet';
 
 // where a record came from, so any number can be traced back to the user's file
 export interface SourceRef {
