@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readSheet } from '../src/layout';
+import { findRepairs } from '../src/repairs';
 import { convertSpreadsheet } from '../src/general/invoices';
 import { askQuestions, emptyAnswers, type Answers } from '../src/general/questions';
 import { moneyOwed } from '../src/reports/owed';
@@ -186,10 +187,10 @@ describe('repairs', () => {
   ];
   const table = readSheet([header, ...rows].join('\n'));
   const base = { ...emptyAnswers(), columns, status, dateOrder: 'day-first' as const };
-  const id = 'move:6:When:Net';
+  const key = findRepairs(table).find((r) => r.id === 'move:6:When:Net')?.key ?? '';
 
   it('uses an accepted repair, notes it, and marks the net as worked out', () => {
-    const result = convertSpreadsheet(table, { ...base, repairs: { [id]: 'accept' } }, options);
+    const result = convertSpreadsheet(table, { ...base, repairs: { [key]: 'accept' } }, options);
     const fixed = result.records[4];
     expect(fixed?.netPence).toEqual({
       origin: 'derived',
@@ -321,10 +322,15 @@ describe('amounts in notes', () => {
     expect(questions[0]).toMatchObject({ id: 'paid:3', row: 3 });
   });
 
+  const noteKey = () => {
+    const q = askQuestions(table, answers).find((x) => x.kind === 'note-amount');
+    return q?.kind === 'note-amount' ? q.key : '';
+  };
+
   it('uses it once accepted, and counts the rest as owed', () => {
     const result = convertSpreadsheet(
       table,
-      { ...answers, repairs: { 'paid:3': 'accept' } },
+      { ...answers, repairs: { [noteKey()]: 'accept' } },
       options,
     );
     const invoice = result.records[1];

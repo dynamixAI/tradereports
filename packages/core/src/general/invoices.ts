@@ -67,7 +67,7 @@ export function convertSpreadsheet(
   // part-paid amounts read from notes that the user accepted, by row
   const fromNotes = new Map(
     noteAmounts(original, answers)
-      .filter((n) => answers.repairs[n.id] === 'accept')
+      .filter((n) => answers.repairs[n.key] === 'accept')
       .map((n) => [n.row, n.amount]),
   );
   // the spelling to use for each customer the user said is the same as another

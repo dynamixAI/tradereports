@@ -18,6 +18,8 @@ import { readSheet } from '../src/layout';
 function acceptEverything(text: string) {
   const sheet = readSheet(text);
   let answers = acceptSuggested(sheet, emptyAnswers());
+  // the ids of the repairs accepted, which name them by row
+  const accepted: string[] = [];
   for (let round = 0; round < 4; round += 1) {
     for (const q of askQuestions(sheet, answers)) {
       if (q.kind === 'column') {
@@ -32,9 +34,11 @@ function acceptEverything(text: string) {
       } else if (q.kind === 'year') {
         answers = { ...answers, years: { ...answers.years, [q.value]: q.suggested ?? 2026 } };
       } else if (q.kind === 'repair') {
-        answers = { ...answers, repairs: { ...answers.repairs, [q.repair.id]: 'accept' } };
+        accepted.push(q.repair.id);
+        answers = { ...answers, repairs: { ...answers.repairs, [q.repair.key]: 'accept' } };
       } else if (q.kind === 'note-amount') {
-        answers = { ...answers, repairs: { ...answers.repairs, [q.id]: 'accept' } };
+        accepted.push(q.id);
+        answers = { ...answers, repairs: { ...answers.repairs, [q.key]: 'accept' } };
       } else if (q.kind === 'same-customer') {
         answers = { ...answers, names: { ...answers.names, [q.match.id]: 'same' } };
       } else if (q.kind === 'split-customer') {
@@ -42,14 +46,14 @@ function acceptEverything(text: string) {
       }
     }
   }
-  return { sheet, answers };
+  return { sheet, answers, accepted };
 }
 
 function check(text: string) {
-  const { sheet, answers } = acceptEverything(text);
+  const { sheet, answers, accepted } = acceptEverything(text);
   const asked = askQuestions(sheet, emptyAnswers()).length;
   const { records } = convertSpreadsheet(sheet, answers as Answers, { businessId: 'r', file: 'r' });
-  const repairs = Object.keys(answers.repairs).sort();
+  const repairs = [...accepted].sort();
   const owed = records.reduce((sum, r) => sum + (r.duePence.value ?? 0), 0);
   const paidFromNotes = Object.fromEntries(
     records.flatMap((r) =>

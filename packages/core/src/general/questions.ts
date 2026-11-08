@@ -2,7 +2,7 @@ import type { CsvTable } from '../csv';
 import { readDate, readDayMonth, type DateOrder } from '../dates';
 import { scanColumn } from '../scan';
 import { findNameMatches, findNameSplits, type NameMatch, type NameSplit } from '../names';
-import { applyRepairs, findRepairs, kindOf, type Repair } from '../repairs';
+import { applyRepairs, findRepairs, kindOf, rowPrint, type Repair } from '../repairs';
 import { parseMoney } from '../money';
 import { readNoteAmount, type NoteAmount } from '../note-amounts';
 import { readStatus } from '../status';
@@ -22,7 +22,8 @@ export interface Answers {
   status: Record<string, StatusMeaning>;
   // the year for each date written with none, keyed by the value as typed
   years: Record<string, number>;
-  // repair suggestions (ADR 0007), keyed by repair id; unanswered means not applied
+  // repair suggestions (ADR 0007) and amounts in notes, keyed by their key (what the row
+  // says, not its number); unanswered means not applied
   repairs: Record<string, 'accept' | 'reject'>;
   // possible same customers, keyed by match id: unanswered means kept apart. Possible
   // different customers with one name, keyed by split id: unanswered means kept together
@@ -55,7 +56,7 @@ export type Question =
   | { kind: 'same-customer'; match: NameMatch }
   | { kind: 'split-customer'; split: NameSplit }
   // the amount paid on a part-paid invoice, read from a note; answered in answers.repairs
-  | { kind: 'note-amount'; id: string; row: number; amount: NoteAmount };
+  | { kind: 'note-amount'; id: string; key: string; row: number; amount: NoteAmount };
 
 export const REQUIRED_FIELDS: Field[] = ['invoiceNumber', 'customer', 'gross'];
 
@@ -145,7 +146,7 @@ export function askQuestions(table: CsvTable, answers: Answers): Question[] {
   }
 
   for (const repair of findRepairs(table)) {
-    if (!(repair.id in answers.repairs)) questions.push({ kind: 'repair', repair });
+    if (!(repair.key in answers.repairs)) questions.push({ kind: 'repair', repair });
   }
 
   // names are compared after the accepted repairs, as a repair can change a customer cell
@@ -157,7 +158,7 @@ export function askQuestions(table: CsvTable, answers: Answers): Question[] {
     }
     // amounts written in notes, for invoices the user said are part paid
     for (const found of noteAmounts(table, answers)) {
-      if (!(found.id in answers.repairs)) questions.push({ kind: 'note-amount', ...found });
+      if (!(found.key in answers.repairs)) questions.push({ kind: 'note-amount', ...found });
     }
 
     // two customers under one name, worked out after the merges the user accepted
@@ -243,7 +244,7 @@ export function acceptSuggested(table: CsvTable, answers: Answers): Answers {
 
 // The table with the user's accepted repairs applied; the original is not changed.
 export function repairedTable(table: CsvTable, answers: Answers) {
-  return applyRepairs(table, findRepairs(table), (r) => answers.repairs[r.id] === 'accept');
+  return applyRepairs(table, findRepairs(table), (r) => answers.repairs[r.key] === 'accept');
 }
 
 // The customer column with the spellings the user said are the same put together.
@@ -269,12 +270,12 @@ export function mergedTable(table: CsvTable, customerColumn: string, answers: An
 export function noteAmounts(
   table: CsvTable,
   answers: Answers,
-): { id: string; row: number; amount: NoteAmount }[] {
+): { id: string; key: string; row: number; amount: NoteAmount }[] {
   const { status: statusColumn, gross: grossColumn } = answers.columns;
   if (!statusColumn || !grossColumn) return [];
   const used = new Set(Object.values(answers.columns).filter((h): h is string => !!h));
   const repaired = repairedTable(table, answers).table;
-  const found: { id: string; row: number; amount: NoteAmount }[] = [];
+  const found: { id: string; key: string; row: number; amount: NoteAmount }[] = [];
   repaired.rows.forEach((row, index) => {
     if (answers.status[statusKey(row[statusColumn] ?? null)] !== 'part paid') return;
     const gross = parseMoney(row[grossColumn] ?? '');
@@ -293,7 +294,9 @@ export function noteAmounts(
     // notes that disagree can't be used
     if (!first || readings.some((r) => r.paidPence !== first.paidPence)) return;
     const rowNumber = repaired.rowNumbers[index] ?? index + 2;
-    found.push({ id: `paid:${rowNumber}`, row: rowNumber, amount: first });
+    // keyed by the row as typed in the original file, like repairs
+    const print = rowPrint(table, table.rowNumbers.indexOf(rowNumber));
+    found.push({ id: `paid:${rowNumber}`, key: `paid:${print}`, row: rowNumber, amount: first });
   });
   return found;
 }
