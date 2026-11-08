@@ -20,3 +20,6 @@ export { workNotBilled } from './reports/unbilled';
 export { incomeByPeriod } from './reports/income';
 export { customerInsights } from './reports/customers';
 export { dataHealth } from './reports/health';
+export * from './dates';
+export { scanColumn, scanTable } from './scan';
+export type { ColumnScan, DateOrderFinding, ValueKind } from './scan';
