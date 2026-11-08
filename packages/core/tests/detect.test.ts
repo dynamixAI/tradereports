@@ -19,6 +19,7 @@ describe('detectFile with real exports', () => {
     { path: 'jobber/quotes-report.csv', tool: 'jobber', kind: 'quotes' },
     { path: 'jobber/one-off-jobs-report.csv', tool: 'jobber', kind: 'jobs' },
     { path: 'jobber/visits-report.csv', tool: 'jobber', kind: 'visits' },
+    { path: 'jobber/clients-export.csv', tool: 'jobber', kind: 'customers' },
   ])('recognises $path', ({ path, tool, kind }) => {
     const { match } = detectFile(headersOf(path));
     expect(match?.tool).toBe(tool);
