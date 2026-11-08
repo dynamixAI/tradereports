@@ -105,7 +105,8 @@ function build(seed: number) {
       expected.push(`swap:${sheetRow}:Net:Total`);
     } else if (mistake === 'shift-left') {
       // a stray empty cell typed before the job or the phone pushes the rest right
-      const where = r.pick(['Job', 'Phone']);
+      // a stray cell right before Net leaves every money value under another money column
+      const where = r.pick(['Job', 'Phone', 'Net']);
       row.splice(at(where), 0, '');
       expected.push(`shift:${sheetRow}:${where}:left`);
     } else if (mistake === 'shift-right' && row[at('Email')]) {

@@ -207,12 +207,23 @@ function findShifts(table: CsvTable, columns: { header: string; kind: Kind | nul
   const said = (values: (string | null)[]) =>
     values.filter((v, j) => v !== null && typed[j] !== null && kindOf(v) !== null).length;
 
+  // money columns side by side all look like money however a row is shifted, so the sum
+  // that holds on most rows is the evidence there: holding after a shift counts as two
+  const sum = commonSum(table, columns);
+  const at = (header: string) => columns.findIndex((c) => c.header === header);
+  const adds = (values: (string | null)[]) => {
+    if (!sum) return false;
+    const money = (h: string) => parseMoney(values[at(h)] ?? '');
+    return holds(money(sum.a), money(sum.b), money(sum.c));
+  };
+  const score = (values: (string | null)[]) => fits(values) + (adds(values) ? 2 : 0);
+
   const shifts: Repair[] = [];
   table.rows.forEach((row, index) => {
     const rowNumber = table.rowNumbers[index] ?? index + 2;
     const values = columns.map((c) => row[c.header] ?? null);
     const beyond = table.overflow?.[index] ?? [];
-    const before = fits(values);
+    const before = score(values);
 
     let best: {
       values: (string | null)[];
@@ -233,9 +244,10 @@ function findShifts(table: CsvTable, columns: { header: string; kind: Kind | nul
         ['left', left],
         ['right', right],
       ] as const) {
-        const fit = fits(candidate);
-        // at least two more values fit, and nearly all that say what they are
-        if (fit < before + 2 || fit < 0.8 * said(candidate)) continue;
+        const fit = score(candidate);
+        // at least two more values fit (or the sum now adds up), and nearly all that say
+        // what they are
+        if (fit < before + 2 || fits(candidate) < 0.8 * said(candidate)) continue;
         // on a tie, a stray extra cell is usually the empty one typed by mistake, so start
         // there; otherwise the latest start, the smallest change that explains the row
         const strayHere = way === 'left' && values[from] === null;
@@ -272,7 +284,9 @@ function findShifts(table: CsvTable, columns: { header: string; kind: Kind | nul
         best.way === 'left'
           ? `Row ${rowNumber}: from "${start}" on, each value sits one column to the right of where it belongs, as if an extra cell was typed.`
           : `Row ${rowNumber}: from "${start}" on, each value sits one column to the left of where it belongs, as if a cell was missed.`,
-        `Moving them back puts ${best.fit} values where they fit, against ${before} now.`,
+        adds(best.values) && !adds(values)
+          ? `Moving them back makes ${sum?.a ?? ''} + ${sum?.b ?? ''} = ${sum?.c ?? ''} add up on this row, as on ${sum?.rows ?? 0} other rows.`
+          : `Moving them back puts ${fits(best.values)} values where they fit, against ${fits(values)} now.`,
         ...lost,
         ...(best.way === 'right' ? [`"${start}" would then be empty.`] : []),
       ],
@@ -281,21 +295,18 @@ function findShifts(table: CsvTable, columns: { header: string; kind: Kind | nul
   return shifts;
 }
 
-// Two money cells swapped on a row (net and total, say) look fine one by one; only the
-// sum shows it. Find the sum that holds on most rows, and on a row where it fails, try
-// swapping two of its cells. Suggest the swap only if it makes the sum hold.
-function moneySwaps(
+// a + b = c, with neither part zero, to within a penny
+const holds = (x: number | null, y: number | null, z: number | null) =>
+  x !== null && y !== null && z !== null && x !== 0 && y !== 0 && Math.abs(x + y - z) <= 1;
+
+// The sum a + b = c (net + VAT = total, say) that holds on most rows with all three filled.
+function commonSum(
   table: CsvTable,
   columns: { header: string; kind: Kind | null }[],
-  found: Repair[],
-): Repair[] {
-  const money = columns.filter((c) => c.kind === 'money').map((c) => c.header);
+): { a: string; b: string; c: string; rows: number } | null {
+  const money = columns.filter((col) => col.kind === 'money').map((col) => col.header);
   const amount = (row: Record<string, string | null>, header: string) =>
     parseMoney(row[header] ?? '');
-  const holds = (x: number | null, y: number | null, z: number | null) =>
-    x !== null && y !== null && z !== null && x !== 0 && y !== 0 && Math.abs(x + y - z) <= 1;
-
-  // the sum a + b = c that holds on most rows with all three filled
   let best: { a: string; b: string; c: string; rows: number } | null = null;
   for (const c of money) {
     for (const a of money) {
@@ -313,6 +324,20 @@ function moneySwaps(
       }
     }
   }
+  return best;
+}
+
+// Two money cells swapped on a row (net and total, say) look fine one by one; only the
+// sum shows it. Find the sum that holds on most rows, and on a row where it fails, try
+// swapping two of its cells. Suggest the swap only if it makes the sum hold.
+function moneySwaps(
+  table: CsvTable,
+  columns: { header: string; kind: Kind | null }[],
+  found: Repair[],
+): Repair[] {
+  const amount = (row: Record<string, string | null>, header: string) =>
+    parseMoney(row[header] ?? '');
+  const best = commonSum(table, columns);
   if (!best) return [];
   const { a, b, c, rows: agreeing } = best;
   const busy = new Set(found.flatMap((r) => [`${r.row}:${r.from}`, `${r.row}:${r.to}`]));
