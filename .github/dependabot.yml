@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      # vitest and its coverage add-on must stay on the same version
+      vitest:
+        patterns: ['vitest', '@vitest/*']
     ignore:
       # typescript-eslint supports TypeScript below 6.1 only; upgrade once it supports 7
       - dependency-name: typescript
