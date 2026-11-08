@@ -29,3 +29,7 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 packages/core/tests/fixtures/blind/
+
+# fake test spreadsheets for the Excel reader; real ones stay ignored
+!packages/core/tests/fixtures/excel/*.xlsx
+!packages/core/tests/fixtures/excel/*.xls

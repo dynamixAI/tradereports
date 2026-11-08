@@ -1,0 +1,10 @@
+Dave's Plumbing - Invoices 2026
+
+Inv No,Date,Customer,Net,VAT,Total,Paid?
+101,13/03/2026,Ann Example,100.00,20.00,120.00,Yes
+102,03/04/2026,Bob Example,80.00,16.00,96.00,No
+103,17/04/2026,Cat Example,55.50,11.10,66.60,Yes
+104,02/05/2026,Dan Example,1250.00,250.00,1500.00,No
+105,20/05/2026,Eve Example,40.00,8.00,48.00,Yes
+106,09/06/2026,Ann Example,310.00,62.00,372.00,No
+,,TOTAL,1835.50,367.10,2202.60,
