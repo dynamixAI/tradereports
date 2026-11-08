@@ -1,0 +1,18 @@
+Ref No.,Client Name,Site Postcode,Contact Tel,Email Address,Job Scope,Labour (£),Materials (£),Net Amount,VAT (20%),Gross Total,Payment Status,Office Notes
+JC-701,Lord Charles Hetherington,SP9 7BT,07700 900232,lordc@example.com,Main ridge overhaul in wheat reed,800.00,200.00,"1,000.00",200.00,"1,200.00",Paid,Standard wheat reed dressing
+JC-702,Cranborne Chase Retreat,SP5 5YY,07700 900121,retreat@example.com,Spar renewal and netting over porch,"1,800.00",700.00,"2,500.00",500.00,"3,000.00",Paid,Quoted under project ref 2026-99
+JC-703,Simon Talbot,SP9 0QE,07700 900565,simon@example.com,Chimney apron re-thatch & dormers,"2,200.00",800.00,"3,000.00",600.00,"3,600.00",Part paid,50% upfront received via BACS
+JC-704,Pemberley Barns Ltd,SP9 8HH,07700 900343,pemberley@example.com,Combed wheat reed on south pitch,600.00,200.00,800.00,160.00,960.00,Unpaid,30 days net terms
+JC-705,Markus Greenwood,SP9 4MM,07700 900909,greenwood@example.com,Block cut ridge x2 holiday lodges,"1,100.00",400.00,"1,500.00",300.00,"1,800.00",Paid,Site foreman mob 07700 900223
+JC-706,Rupert Darcy,SP9 8HH,,07700 900787,rupert@example.com,Hazel scalloping and eaves tidy,"1,400.00",600.00,"2,000.00",400.00,"2,400.00",Unpaid,Chased by letter
+JC-707,Avon Valley Stables,SP11 2JK,07700 900454,avon@example.com,Tack room thatched canopy overhaul,"1,500.00",500.00,"2,000.00",400.00,"2,400.00",Part paid,"balance £1,400 still due after interim draw"
+JC-708,Eleanor Vance,SP4 6TR,07700 900224,eleanor@example.com,Full cottage re-thatch in water reed,900.00,300.00,"1,200.00",240.00,"1,440.00",Paid,BACS received
+JC-709,Simone Talbot,SP11 8LN,07700 900676,stalbot@example.com,Porch thatch maintenance and wire netting,"2,600.00",900.00,"3,500.00",700.00,"4,200.00",Unpaid,Scaffolding permit valid until 18/07/2026
+JC-710,Lord Clarles Hetherington,07700 900232,clarles@example.com,Coach house dormer repairs,800.00,300.00,"1,100.00",220.00,"1,320.00",Paid,Cash on completion,
+JC-711,Greenwood Farm Estate,SP10 7LL,07700 900113,gwfarm@example.com,Hay barn thatch dressing and liggers,"2,800.00",950.00,"3,750.00",750.00,"4,500.00",Part paid,deposit 1500 received 04/08
+JC-712,Cranborne Chase Lodges,SP5 5YY,07700 900999,lodges@example.com,Dining hall west pitch re-reed,500.00,150.00,650.00,130.00,780.00,Paid,Spar replacement
+JC-713,Avon Valley Livery,SP11 2JK,07700 900454,livery@example.com,Stable block eaves wire netting,"1,200.00",400.00,"1,600.00",320.00,"1,920.00",Paid,Gross total 1920 matches survey sheet
+JC-714,Rupert D'Arcy,SP4 8BB,07700 900898,darcy@example.com,Water reed patching on granary,"1,700.00",500.00,"2,200.00",440.00,"2,640.00",Unpaid,Awaiting insurance signoff
+JC-715,Wessex Heritage Centre,SP10 1DF,07700 900446,wessex@example.com,Cider barn thatched canopy dressing,"1,000.00",400.00,"1,400.00",280.00,"1,680.00",Paid,Settled
+,,,,,,,,,,,,
+SEASON TAKINGS SUMMARY,,,,,,"20,200.00","6,700.00","26,900.00","5,380.00","32,280.00",,
