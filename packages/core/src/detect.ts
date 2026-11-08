@@ -58,6 +58,11 @@ export const PROFILES: Profile[] = [
   },
   {
     tool: 'jobber',
+    kind: 'customers',
+    signature: ['J-ID', 'Display Name', 'Is Company?', 'Billing Zip code'],
+  },
+  {
+    tool: 'jobber',
     kind: 'visits',
     signature: ['Job #', 'Visit title', 'Visit completed date'],
   },

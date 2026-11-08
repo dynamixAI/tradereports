@@ -8,3 +8,6 @@ export { convertJobberInvoices } from './jobber/invoices';
 export { detectFile, PROFILES } from './detect';
 export { convertInvoiceFile } from './invoices';
 export { moneyOwed } from './reports/owed';
+export * from './clean';
+export { convertTradifyCustomers } from './tradify/customers';
+export { convertJobberClients } from './jobber/clients';

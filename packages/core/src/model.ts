@@ -70,6 +70,45 @@ export interface Invoice {
   source: SourceRef;
 }
 
+// an address as the file gave it, plus cleaned versions for grouping by area
+export interface Address {
+  street: string | null;
+  city: string | null;
+  region: string | null;
+  postcodeAsTyped: string | null;
+  // "WN7 1EF"; derived when we had to fix the case or spacing
+  postcode: Known<string>;
+  countryAsTyped: string | null;
+  // "United Kingdom"; derived when we mapped "UK" and similar
+  country: Known<string>;
+}
+
+export type PhoneKind = 'mobile' | 'landline';
+
+export interface Phone {
+  // digits only, as dialled in the UK: "07700900001"
+  number: string;
+  kind: PhoneKind;
+}
+
+export interface Customer {
+  businessId: string;
+  // the tool's own ID (Tradify Id, Jobber J-ID); the safest way to link records
+  sourceId: string | null;
+  // the name other files use to refer to this customer
+  name: string;
+  contactName: string | null;
+  isCompany: Known<boolean>;
+  emails: string[];
+  phones: Phone[];
+  address: Address | null;
+  // YYYY-MM-DD
+  createdDate: string | null;
+  archived: Known<boolean>;
+  tags: string[];
+  source: SourceRef;
+}
+
 // a problem found while converting, in plain English, with the rows it concerns
 export interface ConvertIssue {
   kind:
@@ -78,7 +117,8 @@ export interface ConvertIssue {
     | 'inconsistent-rows'
     | 'totals-do-not-add-up'
     | 'possible-draft'
-    | 'source-quirk';
+    | 'source-quirk'
+    | 'duplicate-name';
   rows: number[];
   message: string;
 }
