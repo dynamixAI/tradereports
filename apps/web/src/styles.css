@@ -105,6 +105,9 @@ h1 em {
 /* the main button presses down when clicked */
 .try {
   display: inline-block;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
   font-weight: 500;
   font-size: 17px;
   padding: 16px 26px;
@@ -487,11 +490,181 @@ h2 {
 /* the tool page */
 .tool {
   padding: 40px 28px 90px;
-  max-width: 1100px;
+  max-width: 1240px;
 }
 .tool-title {
-  font-size: clamp(36px, 5vw, 64px);
-  margin-bottom: 28px;
+  font-size: clamp(26px, 2.8vw, 36px);
+  margin-bottom: 8px;
+}
+
+/* files on the left, what they unlock on the right */
+.tool-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+.side {
+  display: grid;
+  gap: 14px;
+}
+.side-title {
+  font-size: 18px;
+  margin: 0 0 12px;
+  max-width: none;
+}
+.unlocks,
+.tips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.unlocks li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+}
+.unlocks .tag {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+}
+.unlocks li.ready .tag {
+  border: 1px solid var(--copper);
+  color: var(--copper);
+}
+.tips li {
+  position: relative;
+  padding: 6px 0 6px 18px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.tips li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--copper);
+}
+@media (max-width: 900px) {
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.tool-sub {
+  color: var(--muted);
+  font-size: 16px;
+  margin: 0 0 18px;
+}
+
+/* the three steps along the top */
+.steps {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0 0 30px;
+}
+.steps li > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  background: none;
+}
+.steps button {
+  cursor: pointer;
+}
+.steps li.now > * {
+  color: var(--ink);
+  border-color: var(--copper);
+}
+.steps li.done > * {
+  color: var(--ink);
+}
+.step-n {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--line);
+  font-size: 12px;
+  font-weight: 700;
+}
+.steps li.now .step-n,
+.steps li.done .step-n {
+  background: var(--copper);
+  color: #fff;
+}
+
+/* which files are in */
+.checklist {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0 0 24px;
+}
+.checklist li {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 14px;
+}
+.checklist li.in {
+  border-style: solid;
+  border-color: var(--copper);
+  color: var(--ink);
+}
+.notice {
+  color: var(--copper);
+  margin: 0 0 16px;
+}
+.file-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+.file-list .card + .card {
+  margin-top: 0;
+}
+.file-slot {
+  margin: 0 0 4px;
+  color: var(--copper);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.file-card p {
+  margin: 8px 0;
+}
+.file-details summary {
+  cursor: pointer;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.step-actions {
+  margin-top: 28px;
 }
 .muted {
   color: var(--muted);
@@ -500,19 +673,26 @@ h2 {
   font-size: 20px;
 }
 .problem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
   border: 1px solid var(--copper);
   border-radius: 14px;
   padding: 14px 18px;
-  margin: 0 0 20px;
+  margin: 0 0 14px;
+}
+.problem p {
+  margin: 0;
 }
 
 /* the drop target lifts and glows when a file is dragged over it */
 .drop {
   display: grid;
-  gap: 10px;
+  gap: 6px;
   justify-items: center;
   text-align: center;
-  padding: 70px 24px;
+  padding: 30px 20px;
   border: 2px dashed var(--line);
   border-radius: 22px;
   background: var(--card);
@@ -531,16 +711,22 @@ h2 {
   outline: 3px solid var(--copper);
   outline-offset: 3px;
 }
+.drop.small {
+  padding: 18px 20px;
+}
 .drop-big {
-  font-size: clamp(24px, 3vw, 36px);
+  font-size: 20px;
   font-weight: 700;
+}
+.drop-small {
+  font-size: 14px;
 }
 .drop-small {
   color: var(--muted);
 }
 .drop-safe {
-  margin-top: 10px;
-  font-size: 14px;
+  margin-top: 6px;
+  font-size: 13px;
   color: var(--copper);
 }
 
@@ -632,6 +818,9 @@ h2 {
 }
 
 /* sheet buttons */
+.card + .card {
+  margin-top: 14px;
+}
 .choices {
   display: flex;
   flex-wrap: wrap;
