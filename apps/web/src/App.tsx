@@ -3,7 +3,7 @@ import { Landing } from './landing/Landing';
 import { Menu } from './Menu';
 import { Placeholder } from './Placeholder';
 import { Tool } from './tool/Tool';
-import type { Upload } from './tool/readUpload';
+import { emptyTool, type ToolState } from './tool/files';
 import {
   applySettings,
   clearSaved,
@@ -40,11 +40,13 @@ export function App() {
   const hash = useHash();
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [calm, setCalm] = useState(initialCalm);
-  // kept here so the file survives a visit to another page
-  const [upload, setUpload] = useState<Upload | null>(null);
+  // kept here so the files survive a visit to another page
+  const [tool, setTool] = useState<ToolState>(emptyTool);
 
   // keep the page in step with the settings
-  useEffect(() => applySettings(theme, calm), [theme, calm]);
+  useEffect(() => {
+    applySettings(theme, calm);
+  }, [theme, calm]);
 
   // new page: go to the top, or to the "how it works" section
   useEffect(() => {
@@ -90,7 +92,7 @@ export function App() {
         }}
       />
       {hash === '#/app' ? (
-        <Tool upload={upload} onUpload={setUpload} />
+        <Tool state={tool} onChange={setTool} />
       ) : page ? (
         <Placeholder title={page} />
       ) : (
