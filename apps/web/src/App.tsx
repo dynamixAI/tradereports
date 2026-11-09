@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Landing } from './landing/Landing';
 import { Menu } from './Menu';
 import { Placeholder } from './Placeholder';
+import { Tool } from './tool/Tool';
+import type { Upload } from './tool/readUpload';
 import {
   applySettings,
   clearSaved,
@@ -14,7 +16,6 @@ import {
 
 // pages live after the # so GitHub Pages never needs to know about them
 const PAGES: Record<string, string> = {
-  '#/app': 'The tool',
   '#/new': "What's new",
   '#/request': 'Request a report',
   '#/help': 'Help and FAQ',
@@ -39,6 +40,8 @@ export function App() {
   const hash = useHash();
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [calm, setCalm] = useState(initialCalm);
+  // kept here so the file survives a visit to another page
+  const [upload, setUpload] = useState<Upload | null>(null);
 
   // keep the page in step with the settings
   useEffect(() => applySettings(theme, calm), [theme, calm]);
@@ -86,7 +89,13 @@ export function App() {
           setCalm(initialCalm());
         }}
       />
-      {page ? <Placeholder title={page} /> : <Landing dark={theme === 'dark'} calm={calm} />}
+      {hash === '#/app' ? (
+        <Tool upload={upload} onUpload={setUpload} />
+      ) : page ? (
+        <Placeholder title={page} />
+      ) : (
+        <Landing dark={theme === 'dark'} calm={calm} />
+      )}
       <footer className="foot">
         <span>© 2026 DynamixAI</span>
         <a href="#/privacy">Privacy</a>

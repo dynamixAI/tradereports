@@ -473,3 +473,187 @@ h2 {
   transition-delay: 0s !important;
   scroll-behavior: auto !important;
 }
+
+/* hidden from view but still usable by keyboard and screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* the tool page */
+.tool {
+  padding: 40px 28px 90px;
+  max-width: 1100px;
+}
+.tool-title {
+  font-size: clamp(36px, 5vw, 64px);
+  margin-bottom: 28px;
+}
+.muted {
+  color: var(--muted);
+}
+.busy {
+  font-size: 20px;
+}
+.problem {
+  border: 1px solid var(--copper);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin: 0 0 20px;
+}
+
+/* the drop target lifts and glows when a file is dragged over it */
+.drop {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
+  padding: 70px 24px;
+  border: 2px dashed var(--line);
+  border-radius: 22px;
+  background: var(--card);
+  cursor: pointer;
+  transition:
+    transform 0.25s cubic-bezier(0.3, 1.5, 0.5, 1),
+    border-color 0.2s;
+}
+.drop:hover,
+.drop:focus-within,
+.drop.over {
+  border-color: var(--copper);
+  transform: perspective(800px) translateY(-4px) rotateX(3deg);
+}
+.drop:focus-within {
+  outline: 3px solid var(--copper);
+  outline-offset: 3px;
+}
+.drop-big {
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 700;
+}
+.drop-small {
+  color: var(--muted);
+}
+.drop-safe {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--copper);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 26px;
+}
+.card-title {
+  font-size: 24px;
+  margin: 0;
+  max-width: none;
+  word-break: break-word;
+}
+.summary-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.ghost {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ghost:hover {
+  border-color: var(--copper);
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.stats div {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.stats b {
+  display: block;
+  font-size: 30px;
+}
+.stats span {
+  color: var(--muted);
+  font-size: 14px;
+}
+.notes h3,
+.preview h3 {
+  font-size: 16px;
+  margin: 24px 0 10px;
+}
+.notes ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+.preview-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.preview table {
+  border-collapse: collapse;
+  font-size: 14px;
+  width: 100%;
+}
+.preview th,
+.preview td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+.preview th {
+  color: var(--muted);
+  font-weight: 500;
+}
+.next {
+  margin: 24px 0 0;
+  color: var(--muted);
+}
+
+/* sheet buttons */
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+.choice {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+.choice:hover {
+  border-color: var(--copper);
+}
+.choice span {
+  color: var(--muted);
+  font-size: 14px;
+}

@@ -23,3 +23,5 @@ export { dataHealth } from './reports/health';
 export * from './dates';
 export { scanColumn, scanTable } from './scan';
 export type { ColumnScan, DateOrderFinding, ValueKind } from './scan';
+export { findHeaderRow, readSheet } from './layout';
+export type { FileKind } from './detect';
