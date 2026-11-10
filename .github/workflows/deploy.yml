@@ -37,7 +37,7 @@ jobs:
         run: npm run check
 
       - name: Upload the built site
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: apps/web/dist
 
