@@ -206,3 +206,24 @@ describe('moneyOwed with linked customers', () => {
     );
   });
 });
+
+describe('moneyOwed: no due dates', () => {
+  it("says it can't tell what's overdue when no invoice has a due date", () => {
+    const result = moneyOwed(
+      [invoice({ number: '1', dueDate: null }), invoice({ number: '2', dueDate: null })],
+      asOf,
+    );
+    expect(result.noDueDates).toBe(true);
+    expect(result.summary[0]).toBe(
+      "You're owed £200.00 across 2 invoices. There are no due dates, so we can't tell how much is overdue.",
+    );
+  });
+
+  it('still gives the overdue figure when some invoices have due dates', () => {
+    const result = moneyOwed(
+      [invoice({ number: '1', dueDate: null }), invoice({ number: '2' })],
+      asOf,
+    );
+    expect(result.noDueDates).toBe(false);
+  });
+});

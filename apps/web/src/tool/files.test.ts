@@ -84,7 +84,7 @@ describe('what files unlock', () => {
   it('asks for both parts when a result needs two kinds of file', () => {
     const files = addUpload(emptyTool(), read('i.csv', 'invoices')).files;
     expect(stillNeeds(unlock('Money owed and overdue'), files)).toBeNull();
-    expect(stillNeeds(unlock('Work not yet invoiced'), files)).toBe('Needs jobs, visits or quotes');
+    expect(stillNeeds(unlock('Work not yet invoiced'), files)).toBe('Needs jobs or quotes');
   });
 
   it('is ready once each part has a file', () => {

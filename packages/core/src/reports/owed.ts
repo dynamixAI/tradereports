@@ -52,6 +52,8 @@ export interface OwedReport {
   overduePence: number;
   // the lowest the real figure could be, if the unsent invoices turn out to be drafts
   owedIfUnsentAreDraftsPence: number;
+  // none of the counted invoices has a due date, so overduePence means nothing
+  noDueDates: boolean;
   invoices: string[];
   byCustomer: CustomerOwed[];
   byAge: BandTotal[];
@@ -117,10 +119,15 @@ export function moneyOwed(invoices: Invoice[], asOf: string, linked?: Linked): O
     });
   }
 
+  // home-made sheets often have no due dates, so "overdue" can't be judged
+  const noDueDates = counted.length > 0 && counted.every((invoice) => invoice.dueDate === null);
+  const lateness = noDueDates
+    ? "There are no due dates, so we can't tell how much is overdue."
+    : `${pounds(overduePence)} of it is overdue.`;
   const summary = [
     counted.length === 0
       ? 'Nobody owes you money on these invoices.'
-      : `You're owed ${pounds(owedPence)} across ${counted.length} ${plural(counted.length, 'invoice')}. ${pounds(overduePence)} of it is overdue.`,
+      : `You're owed ${pounds(owedPence)} across ${counted.length} ${plural(counted.length, 'invoice')}. ${lateness}`,
   ];
   if (unsentPence > 0) {
     summary.push(
@@ -144,6 +151,7 @@ export function moneyOwed(invoices: Invoice[], asOf: string, linked?: Linked): O
     owedPence,
     overduePence,
     owedIfUnsentAreDraftsPence: owedPence - unsentPence,
+    noDueDates,
     invoices: numbers(counted),
     byCustomer: byCustomer(counted, customerOf),
     byAge: byAge(counted, asOf),
