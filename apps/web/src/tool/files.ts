@@ -1,4 +1,4 @@
-import type { FileKind } from '@tradereports/core';
+import { emptyAnswers, type Answers, type FileKind } from '@tradereports/core';
 import type { Upload } from './readUpload';
 
 // the three steps of the tool
@@ -11,6 +11,8 @@ export interface ToolFile {
   id: number;
   slot: FileKind;
   upload: TableUpload;
+  // what the visitor told us about a home-made sheet's columns
+  answers: Answers;
 }
 
 export interface ToolState {
@@ -18,6 +20,8 @@ export interface ToolState {
   files: ToolFile[];
   // files that need something first: a sheet to choose, or a problem to show
   waiting: { id: number; upload: Exclude<Upload, TableUpload> }[];
+  // files we couldn't place; the visitor decides
+  unsure: { id: number; upload: TableUpload }[];
   // one line about the last change, for the visitor and screen readers
   notice: string | null;
   nextId: number;
@@ -35,7 +39,7 @@ export const SLOT_NAMES: Record<FileKind, string> = {
 export const MAIN_SLOTS: FileKind[] = ['invoices', 'quotes', 'jobs'];
 
 export function emptyTool(): ToolState {
-  return { step: 'add', files: [], waiting: [], notice: null, nextId: 1 };
+  return { step: 'add', files: [], waiting: [], unsure: [], notice: null, nextId: 1 };
 }
 
 // a home-made spreadsheet is read as invoices
@@ -50,9 +54,15 @@ export function addUpload(state: ToolState, upload: Upload): ToolState {
   if (upload.kind !== 'table') {
     return { ...base, waiting: [...state.waiting, { id, upload }] };
   }
+  if (upload.fit === 'unsure') {
+    return { ...base, unsure: [...state.unsure, { id, upload }] };
+  }
   const slot = slotOf(upload);
   const old = state.files.find((f) => f.slot === slot);
-  const files = [...state.files.filter((f) => f.slot !== slot), { id, slot, upload }];
+  const files = [
+    ...state.files.filter((f) => f.slot !== slot),
+    { id, slot, upload, answers: emptyAnswers() },
+  ];
   const name = SLOT_NAMES[slot].toLowerCase();
   const notice = old
     ? `${upload.fileName} replaced ${old.upload.fileName} as your ${name} file.`
@@ -70,6 +80,28 @@ export function removeFile(state: ToolState, id: number): ToolState {
     step: files.length === 0 ? 'add' : state.step,
     notice: file ? `${file.upload.fileName} removed.` : state.notice,
   };
+}
+
+// a home-made sheet needs its columns checked; known exports don't
+export function needsQuestions(file: ToolFile): boolean {
+  return file.upload.known === null;
+}
+
+export function setAnswers(state: ToolState, id: number, answers: Answers): ToolState {
+  return { ...state, files: state.files.map((f) => (f.id === id ? { ...f, answers } : f)) };
+}
+
+// the visitor says an unclear file is their invoices after all
+export function useAsInvoices(state: ToolState, id: number): ToolState {
+  const found = state.unsure.find((u) => u.id === id);
+  if (!found) return state;
+  const rest = { ...state, unsure: state.unsure.filter((u) => u.id !== id) };
+  const what = "You said this is your invoices. We'll check the columns together.";
+  return addUpload(rest, { ...found.upload, fit: 'invoices', what });
+}
+
+export function dropUnsure(state: ToolState, id: number): ToolState {
+  return { ...state, unsure: state.unsure.filter((u) => u.id !== id) };
 }
 
 export function dropWaiting(state: ToolState, id: number): ToolState {
@@ -112,4 +144,18 @@ export function stillNeeds(unlock: Unlock, files: ToolFile[]): string | null {
     return names.length > 0 ? `${names.join(', ')} or ${last}` : (last ?? '');
   });
   return `Needs ${words.join(', plus ')}`;
+}
+
+// the tag shown for one part of the report: "Ready" only when the files behind it are checked
+export function unlockStatus(
+  unlock: Unlock,
+  files: ToolFile[],
+  unchecked: Set<number>,
+): { text: string; ready: boolean } {
+  const needs = stillNeeds(unlock, files);
+  if (needs) return { text: needs, ready: false };
+  // every part needs at least one checked file
+  const checked = files.filter((f) => !unchecked.has(f.id));
+  const ok = unlock.needs.every((group) => checked.some((f) => group.includes(f.slot)));
+  return ok ? { text: 'Ready', ready: true } : { text: 'Check columns first', ready: false };
 }

@@ -1,17 +1,22 @@
 import { useEffect, useState, type DragEvent } from 'react';
 import {
   addUpload,
+  dropUnsure,
   dropWaiting,
   MAIN_SLOTS,
+  needsQuestions,
   removeFile,
+  setAnswers,
   SLOT_NAMES,
   sortedFiles,
-  stillNeeds,
   UNLOCKS,
+  unlockStatus,
   type Step,
   type ToolFile,
   type ToolState,
+  useAsInvoices,
 } from './files';
+import { openCount, QuestionBox } from './Check';
 import { readUpload, type Upload } from './readUpload';
 
 const ACCEPT = '.csv,.txt,.xlsx,.xls,.ods';
@@ -33,6 +38,12 @@ export function Tool({ state, onChange }: ToolProps) {
   const [busy, setBusy] = useState(false);
   const at = STEPS.findIndex((s) => s.step === state.step);
   const go = (step: Step) => onChange((s) => ({ ...s, step, notice: null }));
+  // questions still open across every file; the report waits for these
+  const left = state.files.reduce((n, f) => n + (needsQuestions(f) ? openCount(f) : 0), 0);
+  // home-made sheets with questions still open; their results aren't ready yet
+  const unchecked = new Set(
+    state.files.filter((f) => needsQuestions(f) && openCount(f) > 0).map((f) => f.id),
+  );
 
   // each step starts at the top of the page
   // braces matter: newer browsers return a promise from scrollTo, which React can't clean up
@@ -67,8 +78,9 @@ export function Tool({ state, onChange }: ToolProps) {
     <main id="main" tabIndex={-1} className="tool">
       <ol className="steps">
         {STEPS.map((s, i) => {
-          // earlier steps can be revisited; later ones open with the Next button
-          const reachable = i < at || (i === at + 1 && state.files.length > 0 && i === 1);
+          // earlier steps can be revisited; later ones open once there's enough to go on
+          const ready = state.files.length > 0 && (i === 1 || (i === 2 && left === 0));
+          const reachable = i !== at && (i < at || ready);
           return (
             <li key={s.step} className={i === at ? 'now' : i < at ? 'done' : ''}>
               {reachable ? (
@@ -123,6 +135,35 @@ export function Tool({ state, onChange }: ToolProps) {
               ),
             )}
 
+            {state.unsure.map(({ id, upload }) => (
+              <div className="warn" role="alert" key={id}>
+                <p>
+                  <b>{upload.fileName}:</b> {upload.what}
+                </p>
+                <p className="muted">
+                  TradeReports reads invoices you keep yourself, and invoices, quotes, jobs, visits
+                  or customer lists exported from job software. If this came from your job software,
+                  use the report export with all columns, not a file made for importing.
+                </p>
+                <div className="warn-actions">
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => onChange((s) => dropUnsure(s, id))}
+                  >
+                    Remove
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() => onChange((s) => useAsInvoices(s, id))}
+                  >
+                    It's my invoices, use it
+                  </button>
+                </div>
+              </div>
+            ))}
+
             {!busy && <DropZone more={state.files.length > 0} onFiles={(f) => void take(f)} />}
 
             <div className="file-list">
@@ -144,7 +185,7 @@ export function Tool({ state, onChange }: ToolProps) {
             )}
           </div>
 
-          <Unlocks files={state.files} />
+          <Unlocks files={state.files} unchecked={unchecked} />
         </div>
       )}
 
@@ -152,12 +193,37 @@ export function Tool({ state, onChange }: ToolProps) {
         <>
           <h1 className="tool-title">Check columns</h1>
           <p className="tool-sub">
-            Here you'll confirm what each column means. This step is coming in the next update.
+            Tell us what each column means. Most have a suggested answer already.
           </p>
+          {sortedFiles(state.files).map((f) =>
+            needsQuestions(f) ? (
+              <QuestionBox
+                key={f.id}
+                file={f}
+                onAnswers={(answers) => onChange((s) => setAnswers(s, f.id, answers))}
+                onRemove={() => onChange((s) => removeFile(s, f.id))}
+              />
+            ) : (
+              <section key={f.id} className="card known">
+                <p className="file-slot">{SLOT_NAMES[f.slot]}</p>
+                <h2 className="card-title">{f.upload.fileName}</h2>
+                <p className="muted">Recognised, so there are no questions for this file.</p>
+              </section>
+            ),
+          )}
           <div className="step-actions">
             <button type="button" className="ghost" onClick={() => go('add')}>
               Back to your files
             </button>
+            {left === 0 ? (
+              <button type="button" className="try" onClick={() => go('report')}>
+                Next: your report
+              </button>
+            ) : (
+              <span className="muted">
+                {left} {left === 1 ? 'question' : 'questions'} left before your report.
+              </span>
+            )}
           </div>
         </>
       )}
@@ -189,18 +255,18 @@ function Checklist({ files }: { files: ToolFile[] }) {
 }
 
 // the side panel: each part of the report, and whether the files so far are enough
-function Unlocks({ files }: { files: ToolFile[] }) {
+function Unlocks({ files, unchecked }: { files: ToolFile[]; unchecked: Set<number> }) {
   return (
     <aside className="side">
       <section className="card">
         <h2 className="side-title">What your files unlock</h2>
         <ul className="unlocks">
           {UNLOCKS.map((u) => {
-            const needs = stillNeeds(u, files);
+            const status = unlockStatus(u, files, unchecked);
             return (
-              <li key={u.label} className={needs ? '' : 'ready'}>
+              <li key={u.label} className={status.ready ? 'ready' : ''}>
                 <span>{u.label}</span>
-                <span className="tag">{needs ?? 'Ready'}</span>
+                <span className="tag">{status.text}</span>
               </li>
             );
           })}

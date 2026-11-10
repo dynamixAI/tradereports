@@ -25,3 +25,14 @@ export { scanColumn, scanTable } from './scan';
 export type { ColumnScan, DateOrderFinding, ValueKind } from './scan';
 export { findHeaderRow, readSheet } from './layout';
 export type { FileKind } from './detect';
+export { FIELDS } from './suggest';
+export type { Field } from './suggest';
+export {
+  acceptSuggested,
+  askQuestions,
+  emptyAnswers,
+  REQUIRED_FIELDS,
+  statusKey,
+} from './general/questions';
+export type { Answers, Question, StatusMeaning } from './general/questions';
+export type { Repair } from './repairs';
