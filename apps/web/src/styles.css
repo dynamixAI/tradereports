@@ -846,3 +846,131 @@ h2 {
   color: var(--muted);
   font-size: 14px;
 }
+
+/* check columns: the question on the left, the answers so far on the right */
+.check-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+.check-grid .card + .card,
+.known + .card,
+.card + .known {
+  margin-top: 0;
+}
+.known {
+  margin-bottom: 14px;
+}
+.q-count {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+.q-title {
+  font-size: 22px;
+  line-height: 1.25;
+  margin: 0 0 8px;
+  max-width: none;
+}
+.q-options {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+.choice.suggested {
+  border-color: var(--copper);
+}
+.choice.suggested span {
+  color: var(--copper);
+}
+.q-bulk {
+  margin-top: 18px;
+}
+.q-done {
+  font-size: 20px;
+  margin: 8px 0 0;
+}
+.q-year {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.q-year input {
+  width: 110px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 18px;
+}
+.problem-text {
+  color: var(--copper);
+  margin: 8px 0 0;
+}
+.given {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.given li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+/* a button that looks like a link */
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--copper);
+  text-decoration: underline;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .check-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* a file that probably isn't what we need */
+.warn {
+  border: 1px solid var(--copper);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin: 10px 0 18px;
+}
+.warn p {
+  margin: 0 0 10px;
+}
+.warn .muted {
+  margin: 10px 0 0;
+  font-size: 14px;
+}
+.warn-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.q-more {
+  margin-top: 14px;
+}
+
+/* space between "Choose a different column" and "Show columns that don't look right" */
+.q-more + .q-more {
+  margin-left: 20px;
+}

@@ -22,7 +22,34 @@ describe('readUpload: CSV', () => {
     expect(result.table.headers).toEqual(['Ref', 'Customer', 'Total']);
     expect(result.table.rows).toHaveLength(1);
     expect(result.known).toBeNull();
-    expect(result.what).toMatch(/spreadsheet you keep yourself/);
+    expect(result.fit).toBe('invoices');
+    expect(result.what).toMatch(/invoices sheet you keep yourself/);
+  });
+
+  it('is unsure about a sheet with no invoice number, customer or total', async () => {
+    const text =
+      'First name,Last name,Mobile Phone,Email\nGrace,Placeholder,07700 900007,g@example.com\n';
+    const result = await readUpload('clients.csv', bytes(text));
+    if (result.kind !== 'table') throw new Error(result.kind);
+    expect(result.fit).toBe('unsure');
+    expect(result.known).toBeNull();
+    expect(result.what).toMatch(/customer list/);
+  });
+
+  it('is unsure about a sheet of figures with no money total', async () => {
+    const rows = Array.from({ length: 20 }, (_, i) => `Town ${i},2026-01,${100 + i},${5000 + i}`);
+    const text = ['area,month,crimes,population', ...rows].join('\n');
+    const result = await readUpload('figures.csv', bytes(text));
+    if (result.kind !== 'table') throw new Error(result.kind);
+    expect(result.fit).toBe('unsure');
+  });
+
+  it('says when a file looks like a list of quotes', async () => {
+    const text = 'Quote Number,Quote Title,Client Email\n130,Boiler,g@example.com\n';
+    const result = await readUpload('quotes.csv', bytes(text));
+    if (result.kind !== 'table') throw new Error(result.kind);
+    expect(result.fit).toBe('unsure');
+    expect(result.what).toMatch(/list of quotes/);
   });
 
   it('skips title rows and reports them', async () => {
@@ -57,8 +84,9 @@ describe('describeFile', () => {
         rowNumbers: [],
         issues: [],
       };
-      const { what, known } = describeFile(table);
+      const { what, known, fit } = describeFile(table);
       expect(known).toBe(profile.kind);
+      expect(fit).toBe('export');
       expect(what).toMatch(/from job software/);
       expect(what).not.toMatch(/jobber|tradify/i);
     }
