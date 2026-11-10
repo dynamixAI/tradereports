@@ -13,6 +13,8 @@ export interface ToolFile {
   upload: TableUpload;
   // what the visitor told us about a home-made sheet's columns
   answers: Answers;
+  // the visitor said it's their invoices though it didn't look like it
+  forced: boolean;
 }
 
 export interface ToolState {
@@ -48,7 +50,7 @@ export function slotOf(upload: TableUpload): FileKind {
 }
 
 // add what came back from reading a file; a new file replaces one in the same slot
-export function addUpload(state: ToolState, upload: Upload): ToolState {
+export function addUpload(state: ToolState, upload: Upload, forced = false): ToolState {
   const id = state.nextId;
   const base = { ...state, nextId: id + 1 };
   if (upload.kind !== 'table') {
@@ -61,7 +63,7 @@ export function addUpload(state: ToolState, upload: Upload): ToolState {
   const old = state.files.find((f) => f.slot === slot);
   const files = [
     ...state.files.filter((f) => f.slot !== slot),
-    { id, slot, upload, answers: emptyAnswers() },
+    { id, slot, upload, answers: emptyAnswers(), forced },
   ];
   const name = SLOT_NAMES[slot].toLowerCase();
   const notice = old
@@ -97,7 +99,7 @@ export function useAsInvoices(state: ToolState, id: number): ToolState {
   if (!found) return state;
   const rest = { ...state, unsure: state.unsure.filter((u) => u.id !== id) };
   const what = "You said this is your invoices. We'll check the columns together.";
-  return addUpload(rest, { ...found.upload, fit: 'invoices', what });
+  return addUpload(rest, { ...found.upload, fit: 'invoices', what }, true);
 }
 
 export function dropUnsure(state: ToolState, id: number): ToolState {
@@ -124,7 +126,7 @@ export const UNLOCKS: Unlock[] = [
   { label: 'Money owed and overdue', needs: [['invoices']] },
   { label: 'Income by month and VAT quarter', needs: [['invoices']] },
   { label: 'Top and quiet customers', needs: [['invoices']] },
-  { label: 'Work not yet invoiced', needs: [['invoices'], ['jobs', 'visits', 'quotes']] },
+  { label: 'Work not yet invoiced', needs: [['invoices'], ['jobs', 'quotes']] },
   {
     label: 'Data health',
     needs: [['invoices', 'quotes', 'jobs', 'visits', 'customers']],

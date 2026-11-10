@@ -18,6 +18,7 @@ import {
 } from './files';
 import { openCount, QuestionBox } from './Check';
 import { readUpload, type Upload } from './readUpload';
+import { Report } from './Report';
 
 const ACCEPT = '.csv,.txt,.xlsx,.xls,.ods';
 const PREVIEW_ROWS = 5;
@@ -228,12 +229,7 @@ export function Tool({ state, onChange }: ToolProps) {
         </>
       )}
 
-      {state.step === 'report' && (
-        <>
-          <h1 className="tool-title">Your report</h1>
-          <p className="tool-sub">Coming soon.</p>
-        </>
-      )}
+      {state.step === 'report' && <Report files={state.files} onAddFiles={() => go('add')} />}
     </main>
   );
 }
