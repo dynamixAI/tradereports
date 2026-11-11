@@ -10,7 +10,7 @@ export function Contact() {
           Email {SITE.email}
         </a>
       </p>
-      <p>We read every message and aim to reply within 5 working days.</p>
+      <p>We read every message and aim to reply within 48 hours.</p>
 
       <h2>Before you write</h2>
       <ul>

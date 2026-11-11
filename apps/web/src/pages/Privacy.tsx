@@ -71,7 +71,7 @@ export function Privacy() {
       <p>
         Under UK data protection law you can ask what we hold about you, and ask us to correct or
         delete it. In practice the only thing we could hold is an email you sent us. Email{' '}
-        <a href={`mailto:${SITE.email}`}>{SITE.email}</a> and we&apos;ll reply within a month. If
+        <a href={`mailto:${SITE.email}`}>{SITE.email}</a> and we aim to reply within 48 hours. If
         you&apos;re unhappy with how we&apos;ve handled your information, you can complain to the
         Information Commissioner&apos;s Office at ico.org.uk.
       </p>
