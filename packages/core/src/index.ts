@@ -43,3 +43,13 @@ export {
 export type { Answers, Question, StatusMeaning } from './general/questions';
 export type { Repair } from './repairs';
 export { convertSpreadsheet } from './general/invoices';
+export { periodLabel, periodStart, trends } from './reports/trends';
+export type {
+  Comparison,
+  Grain,
+  SoFar,
+  Trend,
+  TrendMetric,
+  TrendPoint,
+  TrendsReport,
+} from './reports/trends';

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { CustomerSummary, PeriodTotal, VatStagger } from '@tradereports/core';
+import type { CustomerSummary, Grain, PeriodTotal, VatStagger } from '@tradereports/core';
 import { stillNeeds, UNLOCKS, type ToolFile } from './files';
 import { buildReport, longDate, money, plain, today } from './report';
+import { Trends } from './Trends';
 
 // how many rows to show before "show all"
 const SHORT_LIST = 8;
@@ -26,7 +27,11 @@ type PartId = (typeof PARTS)[number]['id'];
 // the report: summary cards at the top, each one jumps to its full section below
 export function Report({ files, onAddFiles }: { files: ToolFile[]; onAddFiles: () => void }) {
   const [stagger, setStagger] = useState<VatStagger>(1);
-  const report = useMemo(() => buildReport(files, today(), stagger), [files, stagger]);
+  const [grain, setGrain] = useState<Grain>('week');
+  const report = useMemo(
+    () => buildReport(files, today(), stagger, grain),
+    [files, stagger, grain],
+  );
   const { owed, income, customers, unbilled, health } = report;
 
   const jump = (id: PartId) => {
@@ -148,6 +153,11 @@ export function Report({ files, onAddFiles }: { files: ToolFile[]; onAddFiles: (
           onAddFiles={onAddFiles}
         />
       </div>
+
+      {/* this week against last, before the detail */}
+      {report.trends.trends.length > 0 && (
+        <Trends report={report.trends} grain={grain} onGrain={setGrain} />
+      )}
 
       {/* the full report */}
       <Section id="r-owed" title="Money owed and overdue" needs={needs('r-owed')}>
