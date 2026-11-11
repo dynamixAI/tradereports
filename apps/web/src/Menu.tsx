@@ -15,6 +15,7 @@ const PAGES = [
   { href: '#/new', label: "What's new" },
   { href: '#/request', label: 'Request a report' },
   { href: '#/help', label: 'Help and FAQ' },
+  { href: '#/about', label: 'About' },
 ];
 
 const LEGAL = [
@@ -23,6 +24,7 @@ const LEGAL = [
   { href: '#/storage', label: 'Cookies and storage' },
   { href: '#/accessibility', label: 'Accessibility' },
   { href: '#/contact', label: 'Contact' },
+  { href: '#/licences', label: 'Licences' },
 ];
 
 // the ☰ button and the panel that swings in from the right

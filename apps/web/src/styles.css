@@ -255,15 +255,6 @@ h2 {
   font-weight: 500;
 }
 
-.placeholder {
-  padding: 80px 28px;
-  min-height: 60vh;
-}
-.placeholder p {
-  color: var(--muted);
-  margin: 16px 0 32px;
-}
-
 .foot {
   padding: 40px 28px;
   border-top: 1px solid var(--line);
@@ -1398,6 +1389,68 @@ button.s-card:hover {
   opacity: 0.55;
 }
 
+/* ---------- text pages ---------- */
+.page {
+  padding: 64px 28px 80px;
+  max-width: 760px;
+  margin: 0 auto;
+  min-height: 60vh;
+  outline: none;
+}
+.page h1 {
+  margin: 0;
+}
+.page-intro {
+  font-size: 19px;
+  color: var(--muted);
+  margin: 14px 0 0;
+}
+.page-updated {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 10px 0 0;
+}
+.prose {
+  margin-top: 32px;
+  line-height: 1.65;
+}
+.prose h2 {
+  max-width: none;
+  font-size: 22px;
+  margin: 40px 0 10px;
+}
+.prose p,
+.prose ul {
+  margin: 0 0 14px;
+}
+.prose ul {
+  padding-left: 22px;
+}
+.prose li + li {
+  margin-top: 6px;
+}
+.prose a:not(.try) {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* questions that open when clicked */
+.faq details {
+  border-bottom: 1px solid var(--line);
+  padding: 14px 0;
+}
+.faq summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+.faq details > :not(summary) {
+  margin-top: 10px;
+}
+/* one block per update on What's new */
+.change + .change {
+  margin-top: 8px;
+}
+
 /* ---------- your business ---------- */
 .biz-form {
   display: grid;
@@ -1412,7 +1465,8 @@ button.s-card:hover {
   font-weight: 500;
 }
 .field input,
-.field select {
+.field select,
+.field textarea {
   font: inherit;
   color: var(--ink);
   background: var(--bg);
@@ -1420,7 +1474,8 @@ button.s-card:hover {
   border-radius: 10px;
   padding: 10px 12px;
 }
-.field input[aria-invalid='true'] {
+.field input[aria-invalid='true'],
+.field textarea[aria-invalid='true'] {
   border-color: var(--bad);
 }
 .field-help {
