@@ -46,6 +46,29 @@ describe('buildReport', () => {
     expect(report.unbilled?.agreedNotStartedPence).toBe(648000);
   });
 
+  it('gives week and month trends for each file there', async () => {
+    const state = await load({
+      'invoices.csv': jobberInvoices,
+      'jobs.csv': jobberJobs,
+      'quotes.csv': jobberQuotes,
+    });
+    const weeks = buildReport(state.files, AS_OF, 1, 'week').trends;
+    expect(weeks.trends.map((t) => t.metric)).toEqual([
+      'income',
+      'invoices',
+      'jobsFinished',
+      'quotesSent',
+      'quotesAccepted',
+    ]);
+    // the newest date in these files is 3 November, not today
+    expect(weeks.upTo).toBe('2026-11-03');
+    const months = buildReport(state.files, AS_OF, 1, 'month').trends;
+    const income = months.trends.find((t) => t.metric === 'income');
+    // October against September, the same figures as income by month
+    expect(income?.comparison?.current.value).toBe(750000);
+    expect(income?.comparison?.previous.value).toBe(1149000);
+  });
+
   it('leaves work not invoiced out without jobs or quotes', async () => {
     const state = await load({ 'invoices.csv': tradifyInvoices });
     const report = buildReport(state.files, AS_OF, 1);

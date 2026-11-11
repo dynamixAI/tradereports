@@ -14,18 +14,21 @@ import {
   incomeByPeriod,
   linkRecords,
   moneyOwed,
+  trends,
   workNotBilled,
   type ConvertIssue,
   type Customer,
   type Field,
   type CustomerInsights,
   type FileIssues,
+  type Grain,
   type HealthReport,
   type IncomeReport,
   type Invoice,
   type Job,
   type OwedReport,
   type Quote,
+  type TrendsReport,
   type UnbilledReport,
   type VatStagger,
 } from '@tradereports/core';
@@ -46,6 +49,8 @@ export interface ToolReport {
   // without a jobs file, finished work that wasn't billed can't be found
   hasJobs: boolean;
   health: HealthReport;
+  // this week against last, or this month against last
+  trends: TrendsReport;
   // choices the visitor made against our advice, said plainly at the top
   doubts: string[];
 }
@@ -60,7 +65,12 @@ interface Records {
 }
 
 // Turn every checked file into one report.
-export function buildReport(files: ToolFile[], asOf: string, stagger: VatStagger): ToolReport {
+export function buildReport(
+  files: ToolFile[],
+  asOf: string,
+  stagger: VatStagger,
+  grain: Grain = 'week',
+): ToolReport {
   const records: Records = { invoices: [], quotes: [], jobs: [], customers: [], hasWork: false };
   const issues: FileIssues[] = [];
 
@@ -82,6 +92,7 @@ export function buildReport(files: ToolFile[], asOf: string, stagger: VatStagger
     unbilled: haveInvoices && records.hasWork ? workNotBilled(linked) : null,
     hasJobs: files.some((f) => f.slot === 'jobs'),
     health: dataHealth(issues),
+    trends: trends(records, grain, asOf),
     doubts: doubts(files),
   };
 }

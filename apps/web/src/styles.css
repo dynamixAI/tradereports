@@ -8,6 +8,9 @@
   --copper-deep: #7a3317;
   --card: #17171a;
   --line: #2a2a2e;
+  /* good and bad news on the report */
+  --good: #3fbf7f;
+  --bad: #f06a5a;
 }
 :root[data-theme='light'] {
   --bg: #f3f2ee;
@@ -17,6 +20,8 @@
   --copper-deep: #7a3317;
   --card: #ffffff;
   --line: #dcdad3;
+  --good: #1a7f4b;
+  --bad: #c33a2c;
 }
 
 * {
@@ -1201,6 +1206,198 @@ button.s-card:hover {
   }
 }
 
+/* ---------- this week against last ---------- */
+.r-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* two-button switch: Weeks / Months */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+}
+.seg button {
+  font: inherit;
+  font-size: 14px;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.seg button.on {
+  background: var(--copper);
+  color: #fff;
+}
+.trend-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin: 14px 0 6px;
+}
+.t-tile {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.t-tile p {
+  margin: 0;
+}
+.t-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.t-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+.t-sofar {
+  font-size: 13px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+  margin-top: 4px !important;
+}
+
+/* ▲ +£325 / ▼ −3 / — 0 */
+.chg {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.chg.good {
+  color: var(--good);
+}
+.chg.bad {
+  color: var(--bad);
+}
+.chg.same {
+  color: var(--muted);
+}
+.chg-mark {
+  font-size: 11px;
+}
+.chg-detail {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* bar charts: bars stretch to fit, labels stay normal text */
+.chart {
+  margin: 0 0 8px;
+}
+.chart-body {
+  display: grid;
+  /* minmax stops long labels pushing the chart wider than the screen */
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+}
+.chart-scale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* the plot's height plus one line, so each number sits on its grid line */
+  height: 194px;
+  margin-top: -7px;
+  align-self: start;
+  font-size: 12px;
+  line-height: 14px;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.chart-plot svg {
+  width: 100%;
+  height: 180px;
+  display: block;
+  overflow: visible;
+}
+.chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.chart-labels {
+  display: grid;
+  grid-auto-flow: column;
+  /* columns may be narrower than their label; the shown labels spill into hidden neighbours */
+  grid-auto-columns: minmax(0, 1fr);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 6px;
+  white-space: nowrap;
+}
+.chart-labels span {
+  visibility: hidden;
+}
+.chart-labels span.k2,
+.chart-labels.all span {
+  visibility: visible;
+}
+@media (max-width: 600px) {
+  .chart-labels span.k2,
+  .chart-labels.all span {
+    visibility: hidden;
+  }
+  .chart-labels span.k4 {
+    visibility: visible;
+  }
+  .trend-tiles {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.chart-bar.main {
+  fill: var(--copper);
+}
+.chart-bar.second {
+  fill: var(--muted);
+  opacity: 0.55;
+}
+/* the period still filling up: a dashed outline with a light fill, so it reads as
+   "in progress" rather than faded out */
+.chart-bar.partial {
+  fill-opacity: 0.3;
+  stroke: var(--copper);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+.chart-bar.second.partial {
+  stroke: var(--muted);
+}
+.chart-key {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.chart-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+.chart-swatch.main {
+  background: var(--copper);
+}
+.chart-swatch.second {
+  background: var(--muted);
+  opacity: 0.55;
+}
+
 /* printing or saving as PDF: just the report, on white */
 @media print {
   :root,
@@ -1210,6 +1407,8 @@ button.s-card:hover {
     --muted: #444;
     --card: #fff;
     --line: #ccc;
+    --good: #1a7f4b;
+    --bad: #c33a2c;
   }
   body {
     transition: none;
