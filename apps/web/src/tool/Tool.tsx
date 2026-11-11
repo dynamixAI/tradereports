@@ -19,11 +19,13 @@ import {
 import { openCount, QuestionBox } from './Check';
 import { readUpload, type Upload } from './readUpload';
 import { Report } from './Report';
+import { BusinessStep } from './BusinessStep';
 
 const ACCEPT = '.csv,.txt,.xlsx,.xls,.ods';
 const PREVIEW_ROWS = 5;
 
 const STEPS: { step: Step; label: string }[] = [
+  { step: 'business', label: 'Your business' },
   { step: 'add', label: 'Add files' },
   { step: 'check', label: 'Check columns' },
   { step: 'report', label: 'Your report' },
@@ -80,7 +82,9 @@ export function Tool({ state, onChange }: ToolProps) {
       <ol className="steps">
         {STEPS.map((s, i) => {
           // earlier steps can be revisited; later ones open once there's enough to go on
-          const ready = state.files.length > 0 && (i === 1 || (i === 2 && left === 0));
+          const named = state.business.name.trim() !== '';
+          const ready =
+            (i === 1 && named) || (state.files.length > 0 && (i === 2 || (i === 3 && left === 0)));
           const reachable = i !== at && (i < at || ready);
           return (
             <li key={s.step} className={i === at ? 'now' : i < at ? 'done' : ''}>
@@ -98,9 +102,17 @@ export function Tool({ state, onChange }: ToolProps) {
         })}
       </ol>
 
+      {state.step === 'business' && (
+        <BusinessStep
+          business={state.business}
+          onDone={(business) => onChange((s) => ({ ...s, business, step: 'add', notice: null }))}
+        />
+      )}
+
       {state.step === 'add' && (
         <div className="tool-grid">
           <div>
+            <p className="biz-name">{state.business.name}</p>
             <h1 className="tool-title">Add files</h1>
             <p className="tool-sub">
               Invoices, quotes, jobs or your own spreadsheet. Nothing leaves your computer.
@@ -229,7 +241,14 @@ export function Tool({ state, onChange }: ToolProps) {
         </>
       )}
 
-      {state.step === 'report' && <Report files={state.files} onAddFiles={() => go('add')} />}
+      {state.step === 'report' && (
+        <Report
+          files={state.files}
+          business={state.business}
+          onBusiness={(business) => onChange((s) => ({ ...s, business }))}
+          onAddFiles={() => go('add')}
+        />
+      )}
     </main>
   );
 }

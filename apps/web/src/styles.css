@@ -1398,6 +1398,58 @@ button.s-card:hover {
   opacity: 0.55;
 }
 
+/* ---------- your business ---------- */
+.biz-form {
+  display: grid;
+  gap: 18px;
+  max-width: 560px;
+}
+.field {
+  display: grid;
+  gap: 6px;
+}
+.field > span:first-child {
+  font-weight: 500;
+}
+.field input,
+.field select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.field input[aria-invalid='true'] {
+  border-color: var(--bad);
+}
+.field-help {
+  font-size: 13px;
+  color: var(--muted);
+}
+.field-error {
+  font-size: 13px;
+  color: var(--bad);
+}
+.biz-actions {
+  display: flex;
+  gap: 10px;
+}
+/* the business name above a page title */
+.biz-name {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--copper);
+}
+.dl {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 /* printing or saving as PDF: just the report, on white */
 @media print {
   :root,

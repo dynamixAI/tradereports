@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { CustomerSummary, Grain, PeriodTotal, VatStagger } from '@tradereports/core';
-import { stillNeeds, UNLOCKS, type ToolFile } from './files';
+import { stillNeeds, UNLOCKS, type Business, type ToolFile } from './files';
+import { saveBusiness, STAGGERS } from './business';
 import { buildReport, longDate, money, plain, today } from './report';
 import { Trends } from './Trends';
+import { Download } from './Download';
 
 // how many rows to show before "show all"
 const SHORT_LIST = 8;
-
-const STAGGERS: { value: VatStagger; label: string }[] = [
-  { value: 1, label: 'March, June, September, December' },
-  { value: 2, label: 'January, April, July, October' },
-  { value: 3, label: 'February, May, August, November' },
-];
 
 // the five parts of the report, in the order they appear
 const PARTS = [
@@ -25,8 +21,23 @@ const PARTS = [
 type PartId = (typeof PARTS)[number]['id'];
 
 // the report: summary cards at the top, each one jumps to its full section below
-export function Report({ files, onAddFiles }: { files: ToolFile[]; onAddFiles: () => void }) {
-  const [stagger, setStagger] = useState<VatStagger>(1);
+export function Report({
+  files,
+  business,
+  onBusiness,
+  onAddFiles,
+}: {
+  files: ToolFile[];
+  business: Business;
+  onBusiness: (business: Business) => void;
+  onAddFiles: () => void;
+}) {
+  const stagger = business.stagger;
+  const setStagger = (next: VatStagger) => {
+    const updated = { ...business, stagger: next };
+    saveBusiness(updated);
+    onBusiness(updated);
+  };
   const [grain, setGrain] = useState<Grain>('week');
   const report = useMemo(
     () => buildReport(files, today(), stagger, grain),
@@ -65,6 +76,7 @@ export function Report({ files, onAddFiles }: { files: ToolFile[]; onAddFiles: (
     <div className="report">
       <div className="report-head">
         <div>
+          <p className="biz-name">{business.name}</p>
           <h1 className="tool-title">Your report</h1>
           <p className="tool-sub">Worked out on {longDate(report.asOf)}.</p>
         </div>
@@ -72,9 +84,10 @@ export function Report({ files, onAddFiles }: { files: ToolFile[]; onAddFiles: (
           <button type="button" className="ghost" onClick={onAddFiles}>
             Add or change files
           </button>
-          <button type="button" className="try" onClick={() => window.print()}>
-            Print or save as PDF
+          <button type="button" className="ghost" onClick={() => window.print()}>
+            Print
           </button>
+          <Download report={report} files={files} businessName={business.name} />
         </div>
       </div>
 
