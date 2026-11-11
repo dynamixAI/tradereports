@@ -47,7 +47,7 @@ export function Accessibility() {
       <p>
         If something is hard to use, or you need the report in another format, email{' '}
         <a href={mailto('Accessibility problem')}>{SITE.email}</a>. Tell us what you were trying to
-        do and what device or software you use. We&apos;ll reply within 5 working days.
+        do and what device or software you use. We aim to reply within 48 hours.
       </p>
     </Page>
   );
