@@ -1,4 +1,4 @@
-import { useEffect, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useState, type DragEvent } from 'react';
 import {
   addUpload,
   dropUnsure,
@@ -11,6 +11,7 @@ import {
   sortedFiles,
   UNLOCKS,
   unlockStatus,
+  type Business,
   type Step,
   type ToolFile,
   type ToolState,
@@ -20,6 +21,8 @@ import { openCount, QuestionBox } from './Check';
 import { readUpload, type Upload } from './readUpload';
 import { Report } from './Report';
 import { BusinessStep } from './BusinessStep';
+import { OpenSaved } from './Saved';
+import { saveMemory, type Memory } from './memory';
 
 const ACCEPT = '.csv,.txt,.xlsx,.xls,.ods';
 const PREVIEW_ROWS = 5;
@@ -41,6 +44,22 @@ export function Tool({ state, onChange }: ToolProps) {
   const [busy, setBusy] = useState(false);
   const at = STEPS.findIndex((s) => s.step === state.step);
   const go = (step: Step) => onChange((s) => ({ ...s, step, notice: null }));
+  // remembered on this device as well as in the tool
+  const setMemory = useCallback(
+    (memory: Memory) => {
+      saveMemory(memory);
+      onChange((s) => ({ ...s, memory }));
+    },
+    [onChange],
+  );
+  // a saved file was opened: with a name it can go straight to adding files
+  const opened = (business: Business, memory: Memory) =>
+    onChange((s) => ({
+      ...s,
+      business,
+      memory,
+      step: s.step === 'business' && business.name.trim() ? 'add' : s.step,
+    }));
   // questions still open across every file; the report waits for these
   const left = state.files.reduce((n, f) => n + (needsQuestions(f) ? openCount(f) : 0), 0);
   // home-made sheets with questions still open; their results aren't ready yet
@@ -103,10 +122,13 @@ export function Tool({ state, onChange }: ToolProps) {
       </ol>
 
       {state.step === 'business' && (
-        <BusinessStep
-          business={state.business}
-          onDone={(business) => onChange((s) => ({ ...s, business, step: 'add', notice: null }))}
-        />
+        <>
+          <BusinessStep
+            business={state.business}
+            onDone={(business) => onChange((s) => ({ ...s, business, step: 'add', notice: null }))}
+          />
+          <OpenSaved business={state.business} memory={state.memory} onOpened={opened} />
+        </>
       )}
 
       {state.step === 'add' && (
@@ -118,6 +140,9 @@ export function Tool({ state, onChange }: ToolProps) {
               Invoices, quotes, jobs or your own spreadsheet. Nothing leaves your computer.
             </p>
             <Checklist files={state.files} />
+            {state.files.length === 0 && (
+              <OpenSaved business={state.business} memory={state.memory} onOpened={opened} />
+            )}
 
             {/* changes are announced to screen readers */}
             <div aria-live="polite">
@@ -246,6 +271,8 @@ export function Tool({ state, onChange }: ToolProps) {
           files={state.files}
           business={state.business}
           onBusiness={(business) => onChange((s) => ({ ...s, business }))}
+          memory={state.memory}
+          onMemory={setMemory}
           onAddFiles={() => go('add')}
         />
       )}

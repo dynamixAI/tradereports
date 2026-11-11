@@ -49,14 +49,15 @@ export function BusinessStep({
             maxLength={80}
             autoComplete="organization"
             aria-invalid={touched && missing ? true : undefined}
-            aria-describedby="biz-name-help"
+            aria-describedby={touched && missing ? 'biz-name-error' : undefined}
             autoFocus
           />
-          <span id="biz-name-help" className={touched && missing ? 'field-error' : 'field-help'}>
-            {touched && missing
-              ? 'Add your business name to carry on.'
-              : 'Goes on the report screen and the PowerPoint.'}
-          </span>
+          {/* only shown when the name is left empty */}
+          {touched && missing && (
+            <span id="biz-name-error" className="field-error">
+              Add your business name to carry on.
+            </span>
+          )}
         </label>
 
         <label className="field">
