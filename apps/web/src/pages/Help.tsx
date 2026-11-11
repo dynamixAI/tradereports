@@ -92,6 +92,19 @@ const QUESTIONS: { q: string; a: ReactNode }[] = [
     ),
   },
   {
+    q: 'Can reports go straight into a shared folder?',
+    a: (
+      <>
+        Yes, in Chrome and Edge on a computer. Under the report buttons, choose{' '}
+        <b>Choose a folder</b> and pick the folder, for example a Google Drive, OneDrive or office
+        folder that is synced to your computer. From then on, the PowerPoint and saved answers go
+        straight in there. Each file gets its own name, so nothing is ever overwritten: if the name
+        is taken, the new one gets (2), (3) and so on. Nothing is ever deleted. In other browsers,
+        files go to Downloads as normal.
+      </>
+    ),
+  },
+  {
     q: 'Can I trust the figures?',
     a: (
       <>

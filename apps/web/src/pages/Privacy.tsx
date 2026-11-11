@@ -45,6 +45,12 @@ export function Privacy() {
         go after that, and who you share them with, is up to you. The PowerPoint contains your
         figures and customer names, so treat it like any other business document.
       </p>
+      <p>
+        In Chrome and Edge you can choose a folder, such as a shared Drive, OneDrive or office
+        folder, and these files go straight into it. Your browser asks your permission first. The
+        tool only adds new files there. It never changes, overwrites or deletes anything already in
+        the folder, and anyone who can open that folder can see what is saved in it.
+      </p>
 
       <h2>Visits to the website</h2>
       <p>

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { saveBusiness } from './business';
+import { readyFolder, saveFile, savedMessage } from './folder';
 import type { Business } from './files';
 import {
   mergeMemory,
@@ -73,25 +74,23 @@ export function SaveButton({
   business,
   memory,
   asOf,
+  onSaved,
 }: {
   business: Business;
   memory: Memory;
   asOf: string;
+  // tells the report where the file went
+  onSaved: (note: string | null) => void;
 }) {
-  const save = () => {
+  const save = async () => {
+    // ask about the folder first, while the click still counts
+    const folder = await readyFolder();
     const file = savedFile(business, memory, new Date().toISOString());
     const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = savedFileName(asOf, business.name);
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    onSaved(savedMessage(await saveFile(folder, blob, savedFileName(asOf, business.name))));
   };
   return (
-    <button type="button" className="ghost" onClick={save}>
+    <button type="button" className="ghost" onClick={() => void save()}>
       Save answers
     </button>
   );

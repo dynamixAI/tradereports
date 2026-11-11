@@ -1499,6 +1499,22 @@ button.s-card:hover {
   text-transform: uppercase;
   color: var(--copper);
 }
+/* where files save to, under the report buttons */
+.folder-line {
+  flex-basis: 100%;
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: 0;
+}
+.save-note {
+  flex-basis: 100%;
+  margin: 0;
+}
+.folder-line .link {
+  font-size: 13px;
+}
 .dl {
   display: inline-flex;
   flex-direction: column;

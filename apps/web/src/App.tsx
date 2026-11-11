@@ -14,6 +14,7 @@ import { WhatsNew } from './pages/WhatsNew';
 import { Tool } from './tool/Tool';
 import { emptyTool, type ToolState } from './tool/files';
 import { loadBusiness } from './tool/business';
+import { forgetFolder } from './tool/folder';
 import { loadMemory } from './tool/memory';
 import {
   applySettings,
@@ -100,6 +101,8 @@ export function App() {
         }}
         onClear={() => {
           clearSaved();
+          // and forget the chosen folder (the folder and its files are left alone)
+          void forgetFolder();
           setTheme(initialTheme());
           setCalm(initialCalm());
           // the business name goes too, and the tool starts over

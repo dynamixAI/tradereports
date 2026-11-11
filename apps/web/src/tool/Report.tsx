@@ -5,6 +5,7 @@ import { saveBusiness, STAGGERS } from './business';
 import { buildReport, longDate, money, plain, today } from './report';
 import { Trends } from './Trends';
 import { Download } from './Download';
+import { FolderPicker } from './FolderPicker';
 import { SaveButton } from './Saved';
 import { Since } from './Since';
 import { lastBefore, recordSnapshot, rememberLayout, snapshotOf, type Memory } from './memory';
@@ -48,6 +49,8 @@ export function Report({
     onBusiness(updated);
   };
   const [grain, setGrain] = useState<Grain>('week');
+  // where the last saved file went
+  const [note, setNote] = useState<string | null>(null);
   const report = useMemo(
     () => buildReport(files, today(), stagger, grain),
     [files, stagger, grain],
@@ -114,8 +117,13 @@ export function Report({
           <button type="button" className="ghost" onClick={() => window.print()}>
             Print
           </button>
-          <SaveButton business={business} memory={memory} asOf={report.asOf} />
-          <Download report={report} files={files} businessName={business.name} />
+          <SaveButton business={business} memory={memory} asOf={report.asOf} onSaved={setNote} />
+          <Download report={report} files={files} businessName={business.name} onSaved={setNote} />
+          <FolderPicker />
+          {/* one line saying where the last file went */}
+          <p className="save-note field-help" role="status">
+            {note}
+          </p>
         </div>
       </div>
 
