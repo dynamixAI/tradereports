@@ -1,8 +1,15 @@
-import { emptyAnswers, type Answers, type FileKind } from '@tradereports/core';
+import { emptyAnswers, type Answers, type FileKind, type VatStagger } from '@tradereports/core';
 import type { Upload } from './readUpload';
 
-// the three steps of the tool
-export type Step = 'add' | 'check' | 'report';
+// the four steps of the tool
+export type Step = 'business' | 'add' | 'check' | 'report';
+
+// the quick questions before any files go in; the name goes on every report
+export interface Business {
+  name: string;
+  // which months the VAT quarters end in
+  stagger: VatStagger;
+}
 
 export type TableUpload = Extract<Upload, { kind: 'table' }>;
 
@@ -19,6 +26,7 @@ export interface ToolFile {
 
 export interface ToolState {
   step: Step;
+  business: Business;
   files: ToolFile[];
   // files that need something first: a sheet to choose, or a problem to show
   waiting: { id: number; upload: Exclude<Upload, TableUpload> }[];
@@ -40,8 +48,17 @@ export const SLOT_NAMES: Record<FileKind, string> = {
 // always shown in the checklist; the others appear once added
 export const MAIN_SLOTS: FileKind[] = ['invoices', 'quotes', 'jobs'];
 
-export function emptyTool(): ToolState {
-  return { step: 'add', files: [], waiting: [], unsure: [], notice: null, nextId: 1 };
+export function emptyTool(business: Business = { name: '', stagger: 1 }): ToolState {
+  return {
+    // a remembered name skips the first step
+    step: business.name.trim() ? 'add' : 'business',
+    business,
+    files: [],
+    waiting: [],
+    unsure: [],
+    notice: null,
+    nextId: 1,
+  };
 }
 
 // a home-made spreadsheet is read as invoices

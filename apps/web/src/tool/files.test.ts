@@ -69,6 +69,14 @@ describe('tool files', () => {
   });
 });
 
+describe('the business step', () => {
+  it('starts at the business questions until a name is given', () => {
+    expect(emptyTool().step).toBe('business');
+    expect(emptyTool({ name: 'Smith Plumbing', stagger: 2 }).step).toBe('add');
+    expect(emptyTool({ name: '   ', stagger: 1 }).step).toBe('business');
+  });
+});
+
 describe('what files unlock', () => {
   function unlock(label: string) {
     const found = UNLOCKS.find((u) => u.label === label);

@@ -34,3 +34,13 @@ TradeReports is in early development. Only the latest version on the `main` bran
 
 - Problems that need physical access to an unlocked device
 - Issues in third-party software such as Jobber or Tradify
+
+## Dependency overrides
+
+- `image-size` is overridden to 2.1.0 in `package.json`. The PowerPoint library
+  (pptxgenjs 4.0.1) asks for 1.x, which has high-severity denial-of-service flaws
+  (GHSA-5p2g-fcmc-qvqq, GHSA-w3rx-r6r6-pgpr). Decks are made in the browser and add no
+  images, so the helper isn't used, and npm currently leaves it out of the install.
+  If decks are ever built on a server, test an image-containing deck first, and pass
+  image sizes in rather than letting it measure. Remove the override once pptxgenjs
+  depends on image-size 2.0.3 or later.

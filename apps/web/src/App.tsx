@@ -4,6 +4,7 @@ import { Menu } from './Menu';
 import { Placeholder } from './Placeholder';
 import { Tool } from './tool/Tool';
 import { emptyTool, type ToolState } from './tool/files';
+import { loadBusiness } from './tool/business';
 import {
   applySettings,
   clearSaved,
@@ -41,7 +42,7 @@ export function App() {
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [calm, setCalm] = useState(initialCalm);
   // kept here so the files survive a visit to another page
-  const [tool, setTool] = useState<ToolState>(emptyTool);
+  const [tool, setTool] = useState<ToolState>(() => emptyTool(loadBusiness()));
 
   // keep the page in step with the settings
   useEffect(() => {
@@ -89,6 +90,8 @@ export function App() {
           clearSaved();
           setTheme(initialTheme());
           setCalm(initialCalm());
+          // the business name goes too, and the tool starts over
+          setTool(emptyTool());
         }}
       />
       {hash === '#/app' ? (
