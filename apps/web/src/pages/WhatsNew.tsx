@@ -11,6 +11,7 @@ const CHANGES: { date: string; items: string[] }[] = [
       'Download your report as a PowerPoint, with your business name on it.',
       'This week against last, with charts, from the dates in your files.',
       'About, Help, Privacy, Terms and the other pages are now written.',
+      'Choose a folder (Chrome and Edge): reports go straight into a shared or office folder, and nothing there is ever overwritten.',
     ],
   },
   {
