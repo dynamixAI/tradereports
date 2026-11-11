@@ -1,5 +1,6 @@
 import { emptyAnswers, type Answers, type FileKind, type VatStagger } from '@tradereports/core';
 import type { Upload } from './readUpload';
+import { emptyMemory, findLayout, restore, type Memory } from './memory';
 
 // the four steps of the tool
 export type Step = 'business' | 'add' | 'check' | 'report';
@@ -27,6 +28,8 @@ export interface ToolFile {
 export interface ToolState {
   step: Step;
   business: Business;
+  // answers and report totals remembered from earlier visits
+  memory: Memory;
   files: ToolFile[];
   // files that need something first: a sheet to choose, or a problem to show
   waiting: { id: number; upload: Exclude<Upload, TableUpload> }[];
@@ -48,11 +51,15 @@ export const SLOT_NAMES: Record<FileKind, string> = {
 // always shown in the checklist; the others appear once added
 export const MAIN_SLOTS: FileKind[] = ['invoices', 'quotes', 'jobs'];
 
-export function emptyTool(business: Business = { name: '', stagger: 1 }): ToolState {
+export function emptyTool(
+  business: Business = { name: '', stagger: 1 },
+  memory: Memory = emptyMemory(),
+): ToolState {
   return {
     // a remembered name skips the first step
     step: business.name.trim() ? 'add' : 'business',
     business,
+    memory,
     files: [],
     waiting: [],
     unsure: [],
@@ -78,14 +85,18 @@ export function addUpload(state: ToolState, upload: Upload, forced = false): Too
   }
   const slot = slotOf(upload);
   const old = state.files.find((f) => f.slot === slot);
+  // a home-made sheet laid out like one answered before gets those answers back
+  const layout = upload.known === null ? findLayout(state.memory, upload.table.headers) : undefined;
+  const answers = layout ? restore(upload.table, layout.answers) : emptyAnswers();
   const files = [
     ...state.files.filter((f) => f.slot !== slot),
-    { id, slot, upload, answers: emptyAnswers(), forced },
+    { id, slot, upload, answers, forced },
   ];
   const name = SLOT_NAMES[slot].toLowerCase();
-  const notice = old
+  const added = old
     ? `${upload.fileName} replaced ${old.upload.fileName} as your ${name} file.`
     : `${upload.fileName} added as your ${name} file.`;
+  const notice = layout ? `${added} We used your answers from last time.` : added;
   return { ...base, files, notice };
 }
 

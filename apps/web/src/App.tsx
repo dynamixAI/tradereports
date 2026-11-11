@@ -5,6 +5,7 @@ import { Placeholder } from './Placeholder';
 import { Tool } from './tool/Tool';
 import { emptyTool, type ToolState } from './tool/files';
 import { loadBusiness } from './tool/business';
+import { loadMemory } from './tool/memory';
 import {
   applySettings,
   clearSaved,
@@ -42,7 +43,7 @@ export function App() {
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [calm, setCalm] = useState(initialCalm);
   // kept here so the files survive a visit to another page
-  const [tool, setTool] = useState<ToolState>(() => emptyTool(loadBusiness()));
+  const [tool, setTool] = useState<ToolState>(() => emptyTool(loadBusiness(), loadMemory()));
 
   // keep the page in step with the settings
   useEffect(() => {

@@ -25,8 +25,9 @@ export function BarChart({
 }) {
   const top = niceCeiling(Math.max(1, ...series.flatMap((s) => s.values)));
   const slots = Math.max(1, labels.length);
-  // bars take 70% of each slot, split between the series
-  const barW = (70 / series.length) * (1 / slots);
+  // bars take 70% of each slot, split between the series, but never get chunky when
+  // there are only a few periods
+  const barW = Math.min(6, (70 / series.length) * (1 / slots));
   const height = (v: number) => (v / top) * 100;
   // counted back from the newest, so the newest label always shows; CSS hides some on
   // narrow screens (every 2nd on a wide screen, every 4th on a phone)
@@ -58,12 +59,13 @@ export function BarChart({
             ))}
             {labels.map((label, i) => {
               const partial = partialLast && i === labels.length - 1;
-              const slotStart = (i / slots) * 100 + (100 / slots) * 0.15;
+              // centred in its slot
+              const slotStart = (i / slots) * 100 + (100 / slots - barW * series.length) / 2;
               return series.map((s, j) => {
                 const v = s.values[i] ?? 0;
                 return (
                   <rect
-                    key={`${label}-${s.name}`}
+                    key={`${i}-${s.name}`}
                     className={`chart-bar ${s.tone}${partial ? ' partial' : ''}`}
                     x={slotStart + j * barW}
                     y={100 - height(v)}
@@ -82,7 +84,7 @@ export function BarChart({
             aria-hidden="true"
           >
             {labels.map((label, i) => (
-              <span key={label} className={labelClass(i)}>
+              <span key={i} className={labelClass(i)}>
                 {partialLast && i === labels.length - 1 ? 'so far' : label}
               </span>
             ))}

@@ -5,6 +5,11 @@ import { saveBusiness, STAGGERS } from './business';
 import { buildReport, longDate, money, plain, today } from './report';
 import { Trends } from './Trends';
 import { Download } from './Download';
+import { SaveButton } from './Saved';
+import { Since } from './Since';
+import { lastBefore, recordSnapshot, rememberLayout, snapshotOf, type Memory } from './memory';
+import { blocks } from './answers';
+import { askQuestions } from '@tradereports/core';
 
 // how many rows to show before "show all"
 const SHORT_LIST = 8;
@@ -25,11 +30,15 @@ export function Report({
   files,
   business,
   onBusiness,
+  memory,
+  onMemory,
   onAddFiles,
 }: {
   files: ToolFile[];
   business: Business;
   onBusiness: (business: Business) => void;
+  memory: Memory;
+  onMemory: (memory: Memory) => void;
   onAddFiles: () => void;
 }) {
   const stagger = business.stagger;
@@ -44,6 +53,24 @@ export function Report({
     [files, stagger, grain],
   );
   const { owed, income, customers, unbilled, health } = report;
+
+  // this visit's snapshot is named by when the report was first shown; the one to compare
+  // with is the last report from before that, fixed for the whole visit
+  const [session] = useState(() => new Date().toISOString());
+  const [previous] = useState(() => lastBefore(memory, session));
+
+  // remember this report's totals, and the answers for every fully answered sheet
+  useEffect(() => {
+    let next = recordSnapshot(memory, snapshotOf(report, session));
+    for (const file of files) {
+      const answered =
+        file.upload.known === null &&
+        askQuestions(file.upload.table, file.answers).filter(blocks).length === 0;
+      if (answered) next = rememberLayout(next, file.upload.table.headers, file.answers, session);
+    }
+    // only hand back a change, so this doesn't run again for nothing
+    if (JSON.stringify(next) !== JSON.stringify(memory)) onMemory(next);
+  }, [report, files, memory, onMemory, session]);
 
   const jump = (id: PartId) => {
     const calm = document.documentElement.dataset.motion === 'calm';
@@ -87,6 +114,7 @@ export function Report({
           <button type="button" className="ghost" onClick={() => window.print()}>
             Print
           </button>
+          <SaveButton business={business} memory={memory} asOf={report.asOf} />
           <Download report={report} files={files} businessName={business.name} />
         </div>
       </div>
@@ -166,6 +194,9 @@ export function Report({
           onAddFiles={onAddFiles}
         />
       </div>
+
+      {/* what changed since the last report on this device or in an opened file */}
+      <Since report={report} previous={previous} memory={memory} />
 
       {/* this week against last, before the detail */}
       {report.trends.trends.length > 0 && (
