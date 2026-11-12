@@ -44,6 +44,7 @@ export function Landing({ dark, calm }: { dark: boolean; calm: boolean }) {
               See an example
             </a>
           </div>
+          <p className="cta-note">Free to use. No card, no sign-up.</p>
         </div>
         <div className="visual">
           <Suspense fallback={null}>
@@ -86,6 +87,7 @@ export function Landing({ dark, calm }: { dark: boolean; calm: boolean }) {
             See an example
           </a>
         </div>
+        <p className="cta-note">Free to use. No card, no sign-up.</p>
       </section>
     </main>
   );

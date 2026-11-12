@@ -1620,6 +1620,11 @@ button.s-card:hover {
   flex-wrap: wrap;
   align-items: center;
 }
+.cta-note {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
 .see-example {
   text-decoration: none;
   padding: 14px 22px;
