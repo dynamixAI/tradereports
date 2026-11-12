@@ -5,6 +5,7 @@
 import { SITE } from './site';
 
 const OFF = 'tr-count';
+const NOTICE = 'tr-notice';
 const REPORTS = 'tr-reports';
 const ACTIVE = 'tr-active';
 
@@ -53,6 +54,11 @@ export function visitTally(
   return { reports: kept.reports + 1, month, newMonth: kept.month !== month };
 }
 
+// the bar that tells people about counting, once, as the UK's statistics exception asks
+export function showNotice(env: { seen: boolean; counting: boolean; gpc: boolean }): boolean {
+  return !env.seen && env.counting && !env.gpc;
+}
+
 // ---- in the browser ----
 
 function read(key: string): string | null {
@@ -82,15 +88,33 @@ export function setCounting(on: boolean): void {
   }
 }
 
+function gpcOn(): boolean {
+  return (
+    (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true
+  );
+}
+
 function canSend(): boolean {
   if (typeof window === 'undefined') return false;
-  const gpc = (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl;
   return shouldSend({
     code: SITE.counter,
     host: location.hostname,
     optedOut: !counting(),
-    gpc: gpc === true,
+    gpc: gpcOn(),
   });
+}
+
+export function noticeDue(): boolean {
+  if (typeof window === 'undefined') return false;
+  return showNotice({ seen: read(NOTICE) === 'seen', counting: counting(), gpc: gpcOn() });
+}
+
+export function noticeSeen(): void {
+  try {
+    localStorage.setItem(NOTICE, 'seen');
+  } catch {
+    // storage blocked: it may show again next time
+  }
 }
 
 function send(hit: Hit): void {

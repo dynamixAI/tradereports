@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { band, countUrl, shouldSend, visitTally } from './count';
+import { band, countUrl, shouldSend, showNotice, visitTally } from './count';
 
 describe('which report this is, as a band', () => {
   it('puts each count in a band, never the number itself', () => {
@@ -72,5 +72,22 @@ describe('the tally kept on this computer', () => {
       newMonth: false,
     });
     expect(visitTally({ reports: 5, month: '2026-11' }, '2026-12').newMonth).toBe(true);
+  });
+});
+
+describe('the one-time notice about counting', () => {
+  const fresh = { seen: false, counting: true, gpc: false };
+
+  it('shows on a first visit', () => {
+    expect(showNotice(fresh)).toBe(true);
+  });
+  it('stays away once dismissed', () => {
+    expect(showNotice({ ...fresh, seen: true })).toBe(false);
+  });
+  it('is not needed when counting is already off', () => {
+    expect(showNotice({ ...fresh, counting: false })).toBe(false);
+  });
+  it('is not needed when the browser sends Global Privacy Control, as nothing is counted', () => {
+    expect(showNotice({ ...fresh, gpc: true })).toBe(false);
   });
 });
