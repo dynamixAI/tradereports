@@ -25,7 +25,7 @@ TradeReports does that work for them, and checks the data first. Testing Jobber 
 
 - Everything runs **in your browser**. Files are never uploaded to a server.
 - No accounts and no tracking of file contents.
-- A strict Content Security Policy blocks the page from sending data anywhere.
+- A strict Content Security Policy blocks the page from sending data anywhere, except anonymous totals to our GoatCounter address.
 - How saved answers are kept on your device will be decided with the web app, so that nothing about your customers is stored without your say-so.
 - See [SECURITY.md](SECURITY.md) to report a vulnerability.
 
