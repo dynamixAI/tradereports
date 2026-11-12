@@ -8,6 +8,7 @@ import { Download } from './Download';
 import { FolderPicker } from './FolderPicker';
 import { remembering } from './remember';
 import { countReport } from '../count';
+import { EXAMPLE_DATE } from './example';
 import { Since } from './Since';
 import {
   lastBefore,
@@ -43,6 +44,8 @@ export function Report({
   onMemory,
   onAddFiles,
   onTeam,
+  example = false,
+  onLeaveExample,
 }: {
   files: ToolFile[];
   business: Business;
@@ -52,19 +55,22 @@ export function Report({
   onAddFiles: () => void;
   // answers someone else left in the shared folder
   onTeam: (file: SavedFile) => void;
+  // the made-up example: nothing is saved or counted
+  example?: boolean;
+  onLeaveExample?: (() => void) | undefined;
 }) {
   const stagger = business.stagger;
   const setStagger = (next: VatStagger) => {
     const updated = { ...business, stagger: next };
-    saveBusiness(updated);
+    if (!example) saveBusiness(updated);
     onBusiness(updated);
   };
   const [grain, setGrain] = useState<Grain>('week');
   // where the last saved file went
   const [note, setNote] = useState<string | null>(null);
   const report = useMemo(
-    () => buildReport(files, today(), stagger, grain),
-    [files, stagger, grain],
+    () => buildReport(files, example ? EXAMPLE_DATE : today(), stagger, grain),
+    [files, stagger, grain, example],
   );
   const { owed, income, customers, unbilled, health } = report;
 
@@ -75,10 +81,12 @@ export function Report({
 
   // remember this report's totals, and the answers for every fully answered sheet
   useEffect(() => {
-    // anonymous count: a report was made (once per visit)
-    countReport();
-  }, []);
+    // anonymous count: a report was made (once per visit); the example isn't one
+    if (!example) countReport();
+  }, [example]);
   useEffect(() => {
+    // the example's made-up totals are never kept
+    if (example) return;
     let next = recordSnapshot(memory, snapshotOf(report, session));
     for (const file of files) {
       const answered =
@@ -88,7 +96,7 @@ export function Report({
     }
     // only hand back a change, so this doesn't run again for nothing
     if (JSON.stringify(next) !== JSON.stringify(memory)) onMemory(next);
-  }, [report, files, memory, onMemory, session]);
+  }, [report, files, memory, onMemory, session, example]);
 
   const jump = (id: PartId) => {
     const calm = document.documentElement.dataset.motion === 'calm';
@@ -119,15 +127,28 @@ export function Report({
 
   return (
     <div className="report">
+      {example && (
+        <p className="example-banner" role="note">
+          <b>This is an example, made from made-up files.</b> Every name, address and amount is
+          invented. Your own report looks like this, from your own exports.{' '}
+          <button type="button" className="link" onClick={onLeaveExample}>
+            Try it with your own files
+          </button>
+        </p>
+      )}
       <div className="report-head">
         <div>
           <p className="biz-name">{business.name}</p>
-          <h1 className="tool-title">Your report</h1>
+          <h1 className="tool-title">{example ? 'Example report' : 'Your report'}</h1>
           <p className="tool-sub">Worked out on {longDate(report.asOf)}.</p>
         </div>
         <div className="report-actions no-print">
-          <button type="button" className="ghost" onClick={onAddFiles}>
-            Add or change files
+          <button
+            type="button"
+            className="ghost"
+            onClick={example && onLeaveExample ? onLeaveExample : onAddFiles}
+          >
+            {example ? 'Use my own files' : 'Add or change files'}
           </button>
           <button type="button" className="ghost" onClick={() => window.print()}>
             Print
@@ -138,8 +159,9 @@ export function Report({
             business={business}
             memory={memory}
             onSaved={setNote}
+            example={example}
           />
-          <FolderPicker onTeam={onTeam} />
+          {!example && <FolderPicker onTeam={onTeam} />}
           {/* one line saying where the last file went */}
           <p className="save-note field-help" role="status">
             {note}
@@ -225,7 +247,7 @@ export function Report({
 
       {/* what changed since the last report on this device or in an opened file */}
       {/* nothing to compare with when remembering is switched off */}
-      {remembering() && <Since report={report} previous={previous} memory={memory} />}
+      {!example && remembering() && <Since report={report} previous={previous} memory={memory} />}
 
       {/* this week against last, before the detail */}
       {report.trends.trends.length > 0 && (

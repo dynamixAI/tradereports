@@ -13,12 +13,15 @@ export function Download({
   files,
   business,
   memory,
+  example = false,
   onSaved,
 }: {
   report: ToolReport;
   files: ToolFile[];
   business: Business;
   memory: Memory;
+  // the made-up example: no answers copy, not counted
+  example?: boolean;
   // tells the report where the file went
   onSaved: (note: string | null) => void;
 }) {
@@ -41,7 +44,7 @@ export function Download({
       const saved = await saveFile(folder, blob, deckFileName(report.asOf, business.name));
       let note = savedMessage(saved);
       // in a shared folder, leave a copy of the answers for the rest of the team
-      if (folder && saved.folder && remembering()) {
+      if (folder && saved.folder && remembering() && !example) {
         try {
           const copy = savedFile(business, memory, new Date().toISOString());
           const json = new Blob([JSON.stringify(copy, null, 2)], { type: 'application/json' });
@@ -52,7 +55,7 @@ export function Download({
         }
       }
       onSaved(note);
-      countStep('powerpoint-downloaded');
+      if (!example) countStep('powerpoint-downloaded');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong making the file.');
     } finally {

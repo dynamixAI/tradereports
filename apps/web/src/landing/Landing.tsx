@@ -35,9 +35,15 @@ export function Landing({ dark, calm }: { dark: boolean; calm: boolean }) {
             You run a trade, not a spreadsheet. Drop in your export and get numbers you can trust in
             seconds, not hours.
           </p>
-          <a className="try" href="#/app">
-            Try it free
-          </a>
+          <div className="hero-ctas">
+            <a className="try" href="#/app">
+              Try it free
+            </a>
+            {/* a full report from made-up files, no upload needed */}
+            <a className="ghost see-example" href="#/example">
+              See an example
+            </a>
+          </div>
         </div>
         <div className="visual">
           <Suspense fallback={null}>
@@ -72,9 +78,14 @@ export function Landing({ dark, calm }: { dark: boolean; calm: boolean }) {
         <p className="lead">
           <b>Free. No sign-up. Your file never leaves your computer.</b>
         </p>
-        <a className="try" href="#/app">
-          Try it free
-        </a>
+        <div className="hero-ctas">
+          <a className="try" href="#/app">
+            Try it free
+          </a>
+          <a className="ghost see-example" href="#/example">
+            See an example
+          </a>
+        </div>
       </section>
     </main>
   );
