@@ -1,19 +1,10 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { buildCsp } from './src/csp';
+import { SITE } from './src/site';
 
-// what the page is allowed to load; it can't send data anywhere
-const CSP = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self'",
-  "img-src 'self' data: blob:",
-  "font-src 'self'",
-  "connect-src 'none'",
-  "worker-src 'self' blob:",
-  "object-src 'none'",
-  "base-uri 'none'",
-  "form-action 'none'",
-].join('; ');
+// what the page is allowed to load and contact; see src/csp.ts
+const CSP = buildCsp(SITE.counter);
 
 // add the policy to the built page only; dev needs inline scripts
 function securityPolicy(): Plugin {
