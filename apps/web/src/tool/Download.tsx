@@ -1,19 +1,23 @@
 import { useState } from 'react';
 import { buildDeck, deckFileName } from './deck';
-import { readyFolder, saveFile, savedMessage } from './folder';
+import { readyFolder, saveFile, savedMessage, writeAnswersCopy } from './folder';
+import { savedFile, savedFileName, type Memory } from './memory';
+import { remembering } from './remember';
 import type { ToolReport } from './report';
-import type { ToolFile } from './files';
+import type { Business, ToolFile } from './files';
 
 // the "Download PowerPoint" button: one click, made on this computer
 export function Download({
   report,
   files,
-  businessName,
+  business,
+  memory,
   onSaved,
 }: {
   report: ToolReport;
   files: ToolFile[];
-  businessName: string;
+  business: Business;
+  memory: Memory;
   // tells the report where the file went
   onSaved: (note: string | null) => void;
 }) {
@@ -29,12 +33,24 @@ export function Download({
       const folder = await readyFolder();
       const theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
       const blob = await buildDeck(report, {
-        businessName,
+        businessName: business.name,
         files: files.map((f) => f.upload.fileName),
         theme,
       });
-      const saved = await saveFile(folder, blob, deckFileName(report.asOf, businessName));
-      onSaved(savedMessage(saved));
+      const saved = await saveFile(folder, blob, deckFileName(report.asOf, business.name));
+      let note = savedMessage(saved);
+      // in a shared folder, leave a copy of the answers for the rest of the team
+      if (folder && saved.folder && remembering()) {
+        try {
+          const copy = savedFile(business, memory, new Date().toISOString());
+          const json = new Blob([JSON.stringify(copy, null, 2)], { type: 'application/json' });
+          await writeAnswersCopy(folder, savedFileName(report.asOf, business.name), json);
+          note = `${note ?? ''} Your answers were copied there too, for the rest of your team.`;
+        } catch {
+          // the report is saved; the copy can wait for next time
+        }
+      }
+      onSaved(note);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong making the file.');
     } finally {

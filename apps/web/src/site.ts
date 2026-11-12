@@ -6,7 +6,7 @@ export const SITE = {
   place: 'Wigan, England',
   email: 'dynamixai.tradereports@outlook.com',
   // the date the legal pages last changed
-  updated: '11 November 2026',
+  updated: '12 November 2026',
 };
 
 // an email link with the subject and a starting message filled in

@@ -408,6 +408,17 @@ h2 {
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+.menu-note {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 2px 0 6px;
+}
+.menu-settings .open-saved {
+  margin: 4px 0 0;
+}
+.menu-settings .open-saved .link {
+  text-align: left;
+}
 .clear {
   background: none;
   border: none;

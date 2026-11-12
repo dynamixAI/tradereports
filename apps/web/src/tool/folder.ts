@@ -16,8 +16,21 @@ export interface Folder {
   getFileHandle(name: string, options?: { create?: boolean }): Promise<FileEntry>;
 }
 
+// a folder that can hold folders and list what is in it, for the team answers
+export interface Listed {
+  kind: 'file' | 'directory';
+  name: string;
+  getFile?: () => Promise<{ lastModified: number; text(): Promise<string> }>;
+}
+export interface TeamFolder extends Folder {
+  getDirectoryHandle(
+    name: string,
+    options?: { create?: boolean },
+  ): Promise<Folder & { values(): AsyncIterable<Listed> }>;
+}
+
 // the real handle also asks for permission; older type files don't know these yet
-interface RealFolder extends Folder {
+interface RealFolder extends TeamFolder {
   queryPermission(options: { mode: 'readwrite' }): Promise<PermissionState>;
   requestPermission(options: { mode: 'readwrite' }): Promise<PermissionState>;
 }
@@ -131,6 +144,47 @@ export async function forgetFolder(): Promise<void> {
   }
 }
 
+// ---- team answers ----
+// Inside the chosen folder, a small folder holds a copy of the answers each time a report
+// is saved there. Another computer using the same folder reads the newest copy, so one
+// person answers the column questions and everyone gets them.
+export const ANSWERS_FOLDER = 'TradeReports answers';
+
+export async function writeAnswersCopy(folder: TeamFolder, name: string, blob: Blob) {
+  const sub = await folder.getDirectoryHandle(ANSWERS_FOLDER, { create: true });
+  return writeUnique(sub, name, blob);
+}
+
+// the text of the newest copy, or null if there isn't one
+export async function newestAnswers(folder: TeamFolder): Promise<string | null> {
+  let sub;
+  try {
+    sub = await folder.getDirectoryHandle(ANSWERS_FOLDER);
+  } catch {
+    return null;
+  }
+  let best: { at: number; text: () => Promise<string> } | null = null;
+  for await (const entry of sub.values()) {
+    if (entry.kind !== 'file' || !entry.name.endsWith('.json') || !entry.getFile) continue;
+    const file = await entry.getFile();
+    if (!best || file.lastModified > best.at) {
+      best = { at: file.lastModified, text: () => file.text() };
+    }
+  }
+  return best ? best.text() : null;
+}
+
+// the chosen folder, but only if the browser already allows it (no question asked)
+export async function allowedFolder(): Promise<RealFolder | null> {
+  const folder = await loadFolder();
+  if (!folder) return null;
+  try {
+    return (await folder.queryPermission({ mode: 'readwrite' })) === 'granted' ? folder : null;
+  } catch {
+    return null;
+  }
+}
+
 // ---- saving ----
 
 // call this straight after a click: the browser only shows its "allow?" question then
@@ -155,7 +209,11 @@ export interface Saved {
 }
 
 // put the file in the folder if we have one, otherwise download it
-export async function saveFile(folder: Folder | null, blob: Blob, name: string): Promise<Saved> {
+export async function saveFile(
+  folder: TeamFolder | null,
+  blob: Blob,
+  name: string,
+): Promise<Saved> {
   if (folder) {
     try {
       return { name: await writeUnique(folder, name, blob), folder: folder.name, fellBack: false };

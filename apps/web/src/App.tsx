@@ -13,9 +13,11 @@ import { Terms } from './pages/Terms';
 import { WhatsNew } from './pages/WhatsNew';
 import { Tool } from './tool/Tool';
 import { emptyTool, type ToolState } from './tool/files';
-import { loadBusiness } from './tool/business';
+import { loadBusiness, saveBusiness } from './tool/business';
 import { forgetFolder } from './tool/folder';
-import { loadMemory } from './tool/memory';
+import { loadMemory, saveMemory } from './tool/memory';
+import { remembering, setRemembering } from './tool/remember';
+import { CopyAnswers, OpenSaved } from './tool/Saved';
 import {
   applySettings,
   clearSaved,
@@ -56,6 +58,7 @@ export function App() {
   const [calm, setCalm] = useState(initialCalm);
   // kept here so the files survive a visit to another page
   const [tool, setTool] = useState<ToolState>(() => emptyTool(loadBusiness(), loadMemory()));
+  const [remember, setRemember] = useState(remembering);
 
   // keep the page in step with the settings
   useEffect(() => {
@@ -99,10 +102,32 @@ export function App() {
           setCalm(on);
           saveCalm(on);
         }}
+        remember={remember}
+        onRemember={(on) => {
+          setRemembering(on);
+          setRemember(on);
+          // switched back on: keep what this visit already knows
+          if (on) {
+            saveBusiness(tool.business);
+            saveMemory(tool.memory);
+          }
+        }}
+        answers={
+          <>
+            <CopyAnswers business={tool.business} memory={tool.memory} />
+            <OpenSaved
+              business={tool.business}
+              memory={tool.memory}
+              label="Open a copy"
+              onOpened={(business, memory) => setTool((s) => ({ ...s, business, memory }))}
+            />
+          </>
+        }
         onClear={() => {
           clearSaved();
           // and forget the chosen folder (the folder and its files are left alone)
           void forgetFolder();
+          setRemember(true);
           setTheme(initialTheme());
           setCalm(initialCalm());
           // the business name goes too, and the tool starts over

@@ -3,6 +3,14 @@ import { Page } from './Page';
 // newest first; add a line each time something people would notice changes
 const CHANGES: { date: string; items: string[] }[] = [
   {
+    date: '12 November 2026',
+    items: [
+      'Teams sharing a folder share answers too: one person answers the column questions, everyone gets them.',
+      'New switch in the menu: Remember my answers. Turn it off on a shared computer.',
+      'Copy my answers to another computer has moved into the menu.',
+    ],
+  },
+  {
     date: '11 November 2026',
     items: [
       'Your answers are remembered, so a spreadsheet laid out the same way needs no questions next time.',

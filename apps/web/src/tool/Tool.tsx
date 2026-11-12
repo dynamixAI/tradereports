@@ -22,7 +22,10 @@ import { readUpload, type Upload } from './readUpload';
 import { Report } from './Report';
 import { BusinessStep } from './BusinessStep';
 import { OpenSaved } from './Saved';
-import { saveMemory, type Memory } from './memory';
+import { mergeMemory, readSavedFile, saveMemory, type Memory, type SavedFile } from './memory';
+import { allowedFolder, newestAnswers } from './folder';
+import { FolderPicker } from './FolderPicker';
+import { saveBusiness } from './business';
 
 const ACCEPT = '.csv,.txt,.xlsx,.xls,.ods';
 const PREVIEW_ROWS = 5;
@@ -60,6 +63,41 @@ export function Tool({ state, onChange }: ToolProps) {
       memory,
       step: s.step === 'business' && business.name.trim() ? 'add' : s.step,
     }));
+  // answers left in the shared folder by someone else (or this person on another computer)
+  const team = useCallback(
+    (file: SavedFile) =>
+      onChange((s) => {
+        const memory = mergeMemory(s.memory, file.memory);
+        // their name only fills a blank; a name already typed here wins
+        const business = s.business.name.trim() ? s.business : file.business;
+        if (JSON.stringify(memory) === JSON.stringify(s.memory) && business === s.business) {
+          return s;
+        }
+        saveMemory(memory);
+        saveBusiness(business);
+        return {
+          ...s,
+          memory,
+          business,
+          step: s.step === 'business' && business.name.trim() ? 'add' : s.step,
+          notice: 'Brought in your team’s answers from the shared folder.',
+        };
+      }),
+    [onChange],
+  );
+  // on opening the tool, check the shared folder quietly, if the browser already allows it
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      const folder = await allowedFolder();
+      const text = folder ? await newestAnswers(folder).catch(() => null) : null;
+      const read = text === null ? null : readSavedFile(text);
+      if (live && read && typeof read !== 'string') team(read);
+    })();
+    return () => {
+      live = false;
+    };
+  }, [team]);
   // questions still open across every file; the report waits for these
   const left = state.files.reduce((n, f) => n + (needsQuestions(f) ? openCount(f) : 0), 0);
   // home-made sheets with questions still open; their results aren't ready yet
@@ -128,6 +166,8 @@ export function Tool({ state, onChange }: ToolProps) {
             onDone={(business) => onChange((s) => ({ ...s, business, step: 'add', notice: null }))}
           />
           <OpenSaved business={state.business} memory={state.memory} onOpened={opened} />
+          {/* a team folder can hold answers someone already gave */}
+          <FolderPicker onTeam={team} lead="Shared team folder:" empty="none yet" />
         </>
       )}
 
@@ -274,6 +314,7 @@ export function Tool({ state, onChange }: ToolProps) {
           memory={state.memory}
           onMemory={setMemory}
           onAddFiles={() => go('add')}
+          onTeam={team}
         />
       )}
     </main>

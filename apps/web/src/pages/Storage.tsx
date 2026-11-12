@@ -19,8 +19,12 @@ const ITEMS = [
     what: 'Your answers about your spreadsheet columns, and a few totals from each report (money owed, overdue, unbilled work) so the next report can show what changed. No customer names or invoice rows.',
   },
   {
+    name: 'tr-remember',
+    what: 'Only if you turned off Remember my answers: a note to keep nothing.',
+  },
+  {
     name: 'tr-folder',
-    what: 'Only if you chose a folder: which folder your reports and saved files go into. Chrome and Edge keep this in their own small database rather than with the others. The folder and its files stay yours; this only points to it.',
+    what: 'Only if you chose a folder: which folder your reports go into. Chrome and Edge keep this in their own small database rather than with the others. The folder and its files stay yours; this only points to it.',
   },
 ];
 
