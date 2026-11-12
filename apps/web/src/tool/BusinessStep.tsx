@@ -14,6 +14,8 @@ export function BusinessStep({
   const [name, setName] = useState(business.name);
   const [stagger, setStagger] = useState<VatStagger>(business.stagger);
   const [touched, setTouched] = useState(false);
+  // only complain on leaving the box if they typed in it (not just clicked away, or opened the menu)
+  const [edited, setEdited] = useState(false);
   const trimmed = name.trim();
   const missing = trimmed === '';
 
@@ -43,8 +45,11 @@ export function BusinessStep({
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => setTouched(true)}
+            onChange={(e) => {
+              setName(e.target.value);
+              setEdited(true);
+            }}
+            onBlur={() => edited && setTouched(true)}
             placeholder="Smith Plumbing and Heating"
             maxLength={80}
             autoComplete="organization"

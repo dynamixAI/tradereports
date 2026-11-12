@@ -92,10 +92,11 @@ export function Privacy() {
         Nothing about your files, your business, your customers or your figures is ever sent. For
         the bands and the month, this computer keeps a small tally (see{' '}
         <a href="#/storage">Cookies and storage</a>). We rely on the UK&apos;s exception for
-        statistics, which doesn&apos;t need your consent but does need a free way to opt out: turn
-        off <b>Count my visits anonymously</b> in the menu and nothing is counted from that
-        computer, and the tally is removed. If your browser sends a Global Privacy Control signal,
-        we treat that as opting out too.
+        statistics, which doesn&apos;t need your consent but does need us to tell you and give a
+        free way to opt out. A note at the bottom of the screen says so on your first visit, with a
+        Turn off button. You can also turn off <b>Count my visits anonymously</b> in the menu and
+        nothing is counted from that computer, and the tally is removed. If your browser sends a
+        Global Privacy Control signal, we treat that as opting out too.
       </p>
 
       <h2>If you email us</h2>

@@ -17,7 +17,8 @@ import { loadBusiness, saveBusiness } from './tool/business';
 import { forgetFolder } from './tool/folder';
 import { loadMemory, saveMemory } from './tool/memory';
 import { remembering, setRemembering } from './tool/remember';
-import { countPage, counting, setCounting } from './count';
+import { countPage, counting, noticeSeen, setCounting } from './count';
+import { CountNotice } from './CountNotice';
 import { CopyAnswers, OpenSaved } from './tool/Saved';
 import {
   applySettings,
@@ -114,6 +115,8 @@ export function App() {
         onCount={(on) => {
           setCounting(on);
           setCount(on);
+          // they've found the switch, so the notice isn't needed
+          noticeSeen();
         }}
         onRemember={(on) => {
           setRemembering(on);
@@ -164,6 +167,15 @@ export function App() {
         <a href="#/about">About</a>
         <a href="#/licences">Licences</a>
       </footer>
+      {/* once only: what is counted, and how to stop it */}
+      {count && (
+        <CountNotice
+          onTurnOff={() => {
+            setCounting(false);
+            setCount(false);
+          }}
+        />
+      )}
     </>
   );
 }

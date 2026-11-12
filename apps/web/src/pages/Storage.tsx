@@ -31,6 +31,10 @@ const ITEMS = [
     what: 'The month this computer last made a report, so "active this month" is counted once a month. Removed if you turn off counting.',
   },
   {
+    name: 'tr-notice',
+    what: "That you have seen the note about counting, so it isn't shown again.",
+  },
+  {
     name: 'tr-count',
     what: 'Only if you turned off Count my visits anonymously: a note to count nothing.',
   },
