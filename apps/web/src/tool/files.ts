@@ -38,6 +38,8 @@ export interface ToolState {
   // one line about the last change, for the visitor and screen readers
   notice: string | null;
   nextId: number;
+  // the made-up example from "See an example": nothing is saved or counted
+  example?: boolean;
 }
 
 export const SLOT_NAMES: Record<FileKind, string> = {

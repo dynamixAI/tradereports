@@ -1612,3 +1612,26 @@ button.s-card:hover {
   display: flex;
   gap: 8px;
 }
+
+/* ---------- See an example ---------- */
+.hero-ctas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.see-example {
+  text-decoration: none;
+  padding: 14px 22px;
+  font-size: 17px;
+}
+.example-banner {
+  margin: 0 0 24px;
+  padding: 14px 18px;
+  border: 1px dashed var(--copper);
+  border-radius: 14px;
+  font-size: 15px;
+}
+.example-banner .link {
+  margin-left: 4px;
+}

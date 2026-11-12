@@ -137,7 +137,8 @@ export type Step =
   | 'check-columns-opened'
   | 'powerpoint-downloaded'
   | 'copy-opened'
-  | 'team-answers-used';
+  | 'team-answers-used'
+  | 'example-opened';
 
 export function countStep(step: Step): void {
   if (sent.has(step)) return;

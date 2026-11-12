@@ -9,6 +9,7 @@ const CHANGES: { date: string; items: string[] }[] = [
       'New switch in the menu: Remember my answers. Turn it off on a shared computer.',
       'Copy my answers to another computer has moved into the menu.',
       'Anonymous counting of totals, with no cookies or IDs, and a switch in the menu to turn it off.',
+      'See an example: a full report from made-up files, before you use your own.',
     ],
   },
   {

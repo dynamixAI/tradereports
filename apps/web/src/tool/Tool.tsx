@@ -41,10 +41,12 @@ const STEPS: { step: Step; label: string }[] = [
 interface ToolProps {
   state: ToolState;
   onChange: (update: (state: ToolState) => ToolState) => void;
+  // leave the made-up example for the visitor's own tool
+  onLeaveExample?: () => void;
 }
 
 // the tool: add files, check columns, see the report
-export function Tool({ state, onChange }: ToolProps) {
+export function Tool({ state, onChange, onLeaveExample }: ToolProps) {
   const [busy, setBusy] = useState(false);
   const at = STEPS.findIndex((s) => s.step === state.step);
   const go = (step: Step) => onChange((s) => ({ ...s, step, notice: null }));
@@ -92,6 +94,7 @@ export function Tool({ state, onChange }: ToolProps) {
   // on opening the tool, check the shared folder quietly, if the browser already allows it
   useEffect(() => {
     let live = true;
+    if (state.example) return;
     void (async () => {
       const folder = await allowedFolder();
       const text = folder ? await newestAnswers(folder).catch(() => null) : null;
@@ -101,7 +104,7 @@ export function Tool({ state, onChange }: ToolProps) {
     return () => {
       live = false;
     };
-  }, [team]);
+  }, [team, state.example]);
   // questions still open across every file; the report waits for these
   const left = state.files.reduce((n, f) => n + (needsQuestions(f) ? openCount(f) : 0), 0);
   // home-made sheets with questions still open; their results aren't ready yet
@@ -117,8 +120,9 @@ export function Tool({ state, onChange }: ToolProps) {
     if (state.step === 'check') countStep('check-columns-opened');
   }, [state.step]);
   useEffect(() => {
-    countStep('tool-opened');
-  }, []);
+    // the example isn't someone using the tool
+    if (!state.example) countStep('tool-opened');
+  }, [state.example]);
 
   // read files one after another, adding each as it's done
   async function take(files: File[]) {
@@ -176,6 +180,9 @@ export function Tool({ state, onChange }: ToolProps) {
             onDone={(business) => onChange((s) => ({ ...s, business, step: 'add', notice: null }))}
           />
           <OpenSaved business={state.business} memory={state.memory} onOpened={opened} />
+          <p className="field-help">
+            Just looking? <a href="#/example">See an example report</a> made from made-up files.
+          </p>
           {/* a team folder can hold answers someone already gave */}
           <FolderPicker onTeam={team} lead="Shared team folder:" empty="none yet" />
         </>
@@ -325,6 +332,8 @@ export function Tool({ state, onChange }: ToolProps) {
           onMemory={setMemory}
           onAddFiles={() => go('add')}
           onTeam={team}
+          example={state.example ?? false}
+          onLeaveExample={onLeaveExample}
         />
       )}
     </main>

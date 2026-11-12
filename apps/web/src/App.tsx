@@ -17,8 +17,9 @@ import { loadBusiness, saveBusiness } from './tool/business';
 import { forgetFolder } from './tool/folder';
 import { loadMemory, saveMemory } from './tool/memory';
 import { remembering, setRemembering } from './tool/remember';
-import { countPage, counting, noticeSeen, setCounting } from './count';
+import { countPage, countStep, counting, noticeSeen, setCounting } from './count';
 import { CountNotice } from './CountNotice';
+import { exampleTool } from './tool/example';
 import { CopyAnswers, OpenSaved } from './tool/Saved';
 import {
   applySettings,
@@ -78,6 +79,16 @@ export function App() {
     countPage(hash.split('?')[0] ?? '', document.title);
   }, [hash]);
   const [count, setCount] = useState(counting);
+
+  // #/example shows a report from made-up files; #/app always means the visitor's own tool
+  const fresh = () => emptyTool(loadBusiness(), loadMemory());
+  useEffect(() => {
+    if (hash === '#/example' && !tool.example) {
+      countStep('example-opened');
+      void exampleTool().then(setTool);
+    }
+    if (hash === '#/app' && tool.example) setTool(fresh());
+  }, [hash, tool.example]);
 
   const Page = PAGES[hash];
   return (
@@ -150,8 +161,20 @@ export function App() {
           setTool(emptyTool());
         }}
       />
-      {hash === '#/app' ? (
-        <Tool state={tool} onChange={setTool} />
+      {hash === '#/example' && !tool.example ? (
+        // a moment while the made-up files are read; the empty tool would count as a visit
+        <main id="main" className="page">
+          <p className="page-intro">Loading the example…</p>
+        </main>
+      ) : hash === '#/app' || hash === '#/example' ? (
+        <Tool
+          state={tool}
+          onChange={setTool}
+          onLeaveExample={() => {
+            setTool(fresh());
+            location.hash = '#/app';
+          }}
+        />
       ) : Page ? (
         <Page />
       ) : (
