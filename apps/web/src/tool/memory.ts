@@ -1,4 +1,5 @@
 import { askQuestions, type Answers, type CsvTable } from '@tradereports/core';
+import { remembering } from './remember';
 import type { Business } from './files';
 import type { ToolReport } from './report';
 
@@ -181,13 +182,13 @@ export function savedFile(business: Business, memory: Memory, now: string): Save
   return { kind: 'tradereports', version: MEMORY_VERSION, savedAt: now, business, memory };
 }
 
-// "2026-11-11 Smith Plumbing saved answers.json"
+// "2026-11-11 Smith Plumbing answers.json"
 export function savedFileName(asOf: string, businessName: string): string {
   const safe = businessName
     .replace(/[\\/:*?"<>|]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  return `${asOf} ${safe || 'Business'} saved answers.json`;
+  return `${asOf} ${safe || 'Business'} answers.json`;
 }
 
 // Read a saved file, checking every part, since anyone could hand us any file.
@@ -282,6 +283,8 @@ export function loadMemory(): Memory {
 }
 
 export function saveMemory(memory: Memory): void {
+  // switched off in Settings: keep nothing
+  if (!remembering()) return;
   try {
     localStorage.setItem(KEY, JSON.stringify(memory));
   } catch {

@@ -6,9 +6,16 @@ import { buildReport, longDate, money, plain, today } from './report';
 import { Trends } from './Trends';
 import { Download } from './Download';
 import { FolderPicker } from './FolderPicker';
-import { SaveButton } from './Saved';
+import { remembering } from './remember';
 import { Since } from './Since';
-import { lastBefore, recordSnapshot, rememberLayout, snapshotOf, type Memory } from './memory';
+import {
+  lastBefore,
+  recordSnapshot,
+  rememberLayout,
+  snapshotOf,
+  type Memory,
+  type SavedFile,
+} from './memory';
 import { blocks } from './answers';
 import { askQuestions } from '@tradereports/core';
 
@@ -34,6 +41,7 @@ export function Report({
   memory,
   onMemory,
   onAddFiles,
+  onTeam,
 }: {
   files: ToolFile[];
   business: Business;
@@ -41,6 +49,8 @@ export function Report({
   memory: Memory;
   onMemory: (memory: Memory) => void;
   onAddFiles: () => void;
+  // answers someone else left in the shared folder
+  onTeam: (file: SavedFile) => void;
 }) {
   const stagger = business.stagger;
   const setStagger = (next: VatStagger) => {
@@ -117,9 +127,14 @@ export function Report({
           <button type="button" className="ghost" onClick={() => window.print()}>
             Print
           </button>
-          <SaveButton business={business} memory={memory} asOf={report.asOf} onSaved={setNote} />
-          <Download report={report} files={files} businessName={business.name} onSaved={setNote} />
-          <FolderPicker />
+          <Download
+            report={report}
+            files={files}
+            business={business}
+            memory={memory}
+            onSaved={setNote}
+          />
+          <FolderPicker onTeam={onTeam} />
           {/* one line saying where the last file went */}
           <p className="save-note field-help" role="status">
             {note}
@@ -204,7 +219,8 @@ export function Report({
       </div>
 
       {/* what changed since the last report on this device or in an opened file */}
-      <Since report={report} previous={previous} memory={memory} />
+      {/* nothing to compare with when remembering is switched off */}
+      {remembering() && <Since report={report} previous={previous} memory={memory} />}
 
       {/* this week against last, before the detail */}
       {report.trends.trends.length > 0 && (

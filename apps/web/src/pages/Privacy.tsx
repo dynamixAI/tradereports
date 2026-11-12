@@ -41,15 +41,23 @@ export function Privacy() {
 
       <h2>Files you save</h2>
       <p>
-        <b>Save answers</b> and <b>Download PowerPoint</b> create files on your computer. Where they
-        go after that, and who you share them with, is up to you. The PowerPoint contains your
-        figures and customer names, so treat it like any other business document.
+        <b>Download PowerPoint</b> and <b>Copy my answers to another computer</b> create files on
+        your computer. Where they go after that, and who you share them with, is up to you. The
+        PowerPoint contains your figures and customer names, so treat it like any other business
+        document.
       </p>
       <p>
         In Chrome and Edge you can choose a folder, such as a shared Drive, OneDrive or office
         folder, and these files go straight into it. Your browser asks your permission first. The
         tool only adds new files there. It never changes, overwrites or deletes anything already in
         the folder, and anyone who can open that folder can see what is saved in it.
+      </p>
+      <p>
+        When a report goes into a chosen folder, a copy of your answers goes with it, into a folder
+        inside called TradeReports answers, so others using the same folder aren&apos;t asked the
+        same questions. It holds your business name, what each column means and a few report totals,
+        never customer names or invoice rows. Turning off <b>Remember my answers</b> in the menu
+        stops this, and stops this computer keeping anything too.
       </p>
 
       <h2>Visits to the website</h2>

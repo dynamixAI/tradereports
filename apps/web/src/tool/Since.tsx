@@ -45,8 +45,8 @@ export function Since({
         </h2>
         <p className="muted">
           This is your first report on this computer. Next time, this shows what changed: money
-          owed, overdue and work not invoiced, up or down. To compare with a report from another
-          computer, open the file you saved there.
+          owed, overdue and work not invoiced, up or down. Reports made on another computer count
+          too if you share a folder, or open a copy from the menu.
         </p>
       </section>
     );

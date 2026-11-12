@@ -1,9 +1,20 @@
 import { useEffect, useState } from 'react';
-import { canPickFolder, forgetFolder, loadFolder, pickFolder } from './folder';
+import { canPickFolder, forgetFolder, loadFolder, newestAnswers, pickFolder } from './folder';
+import { readSavedFile, type SavedFile } from './memory';
 
 // "Files save to: Downloads · Choose a folder" under the report buttons.
 // Hidden in browsers that can't write into a folder.
-export function FolderPicker() {
+// onTeam gets the newest answers someone else left in the folder.
+export function FolderPicker({
+  onTeam,
+  lead = 'Files save to:',
+  empty = 'Downloads',
+}: {
+  onTeam: (file: SavedFile) => void;
+  lead?: string;
+  // what to show before a folder is chosen
+  empty?: string;
+}) {
   const [name, setName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -18,12 +29,17 @@ export function FolderPicker() {
 
   const choose = async () => {
     const f = await pickFolder();
-    if (f) setName(f.name);
+    if (!f) return;
+    setName(f.name);
+    // someone may have answered the column questions already
+    const text = await newestAnswers(f).catch(() => null);
+    const read = text === null ? null : readSavedFile(text);
+    if (read && typeof read !== 'string') onTeam(read);
   };
 
   return (
     <p className="folder-line field-help">
-      Files save to: <b>{name ?? 'Downloads'}</b>
+      {lead} <b>{name ?? empty}</b>
       <button type="button" className="link" onClick={() => void choose()}>
         {name ? 'Change folder' : 'Choose a folder'}
       </button>
@@ -36,7 +52,7 @@ export function FolderPicker() {
             setName(null);
           }}
         >
-          Use Downloads
+          {empty === 'Downloads' ? 'Use Downloads' : 'Stop using it'}
         </button>
       )}
     </p>

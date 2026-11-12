@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { nextName, savedMessage, writeUnique, type Folder } from './folder';
+import {
+  ANSWERS_FOLDER,
+  newestAnswers,
+  nextName,
+  savedMessage,
+  writeAnswersCopy,
+  writeUnique,
+  type Folder,
+  type TeamFolder,
+} from './folder';
 
 // a pretend folder: a list of file names and what was written to each
 function fakeFolder(names: string[] = []) {
@@ -90,5 +99,89 @@ describe('the line shown after saving', () => {
 
   it('stays quiet for a normal download', () => {
     expect(savedMessage({ name: 'a.pptx', folder: null, fellBack: false })).toBeNull();
+  });
+});
+
+// a pretend shared folder with an answers folder inside, for the team copies
+function sharedFolder(copies: { name: string; text: string; at: number }[] | null) {
+  const inner = new Map(copies?.map((c) => [c.name, c]) ?? []);
+  let made = copies !== null;
+  const sub = {
+    name: ANSWERS_FOLDER,
+    getFileHandle(name: string, options?: { create?: boolean }) {
+      if (!inner.has(name) && !options?.create) {
+        return Promise.reject(new DOMException('not found', 'NotFoundError'));
+      }
+      return Promise.resolve({
+        createWritable: () => {
+          let text = '';
+          return Promise.resolve({
+            write: async (b: Blob) => {
+              text = await b.text();
+            },
+            close: () => {
+              inner.set(name, { name, text, at: 999 });
+              return Promise.resolve();
+            },
+          });
+        },
+      });
+    },
+    async *values() {
+      // a sub-folder in there is skipped
+      yield { kind: 'directory' as const, name: 'old' };
+      for (const c of inner.values()) {
+        yield {
+          kind: 'file' as const,
+          name: c.name,
+          getFile: () =>
+            Promise.resolve({ lastModified: c.at, text: () => Promise.resolve(c.text) }),
+        };
+      }
+    },
+  };
+  const top: TeamFolder = {
+    name: 'Office',
+    getFileHandle: () => Promise.reject(new DOMException('not found', 'NotFoundError')),
+    getDirectoryHandle(name, options) {
+      if (name !== ANSWERS_FOLDER) throw new Error('wrong folder');
+      if (!made && !options?.create) {
+        return Promise.reject(new DOMException('not found', 'NotFoundError'));
+      }
+      made = true;
+      return Promise.resolve(sub);
+    },
+  };
+  return { top, inner };
+}
+
+describe('team answers in the shared folder', () => {
+  it('finds nothing when no one has saved answers yet', async () => {
+    const { top } = sharedFolder(null);
+    expect(await newestAnswers(top)).toBeNull();
+  });
+
+  it('reads the newest copy', async () => {
+    const { top } = sharedFolder([
+      { name: 'a.json', text: 'old', at: 1 },
+      { name: 'b.json', text: 'newest', at: 3 },
+      { name: 'c.json', text: 'middle', at: 2 },
+      { name: 'notes.txt', text: 'not answers', at: 9 },
+    ]);
+    expect(await newestAnswers(top)).toBe('newest');
+  });
+
+  it('adds a copy in its own folder without touching the others', async () => {
+    const { top, inner } = sharedFolder([{ name: 'answers.json', text: 'old', at: 1 }]);
+    const name = await writeAnswersCopy(top, 'answers.json', new Blob(['new']));
+    expect(name).toBe('answers (2).json');
+    expect(inner.get('answers.json')?.text).toBe('old');
+    expect(inner.get('answers (2).json')?.text).toBe('new');
+  });
+
+  it('makes the answers folder the first time', async () => {
+    const { top, inner } = sharedFolder(null);
+    await writeAnswersCopy(top, 'answers.json', new Blob(['first']));
+    expect(inner.get('answers.json')?.text).toBe('first');
   });
 });

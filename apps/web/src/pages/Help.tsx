@@ -75,9 +75,11 @@ const QUESTIONS: { q: string; a: ReactNode }[] = [
     q: 'Can I use it on another computer?',
     a: (
       <>
-        Yes. On the report, choose <b>Save answers</b>. On the other computer, choose{' '}
-        <b>Open your saved file</b> on the first step. Your business name, column answers and past
-        report totals come with it.
+        Yes. If your team shares a folder (see the next question but one), the answers travel
+        through it on their own. Otherwise, open the menu and choose{' '}
+        <b>Copy my answers to another computer</b>. Get that file to the other computer, for example
+        by email, and there choose <b>Open your copy</b> on the first step. Your business name,
+        column answers and past report totals come with it.
       </>
     ),
   },
@@ -96,11 +98,34 @@ const QUESTIONS: { q: string; a: ReactNode }[] = [
     a: (
       <>
         Yes, in Chrome and Edge on a computer. Under the report buttons, choose{' '}
-        <b>Choose a folder</b> and pick the folder, for example a Google Drive, OneDrive or office
-        folder that is synced to your computer. From then on, the PowerPoint and saved answers go
-        straight in there. Each file gets its own name, so nothing is ever overwritten: if the name
-        is taken, the new one gets (2), (3) and so on. Nothing is ever deleted. In other browsers,
-        files go to Downloads as normal.
+        <b>Choose a folder</b> and pick the folder, for example a Google Drive, OneDrive or
+        SharePoint folder that is synced to your computer through the OneDrive or Google Drive app.
+        From then on, each PowerPoint goes straight in there. Each file gets its own name, so
+        nothing is ever overwritten: if the name is taken, the new one gets (2), (3) and so on.
+        Nothing is ever deleted. In other browsers, files go to Downloads as normal.
+      </>
+    ),
+  },
+  {
+    q: 'Does my team have to answer the column questions too?',
+    a: (
+      <>
+        No, if you all use the same shared folder. Each time a report is saved there, a copy of the
+        answers goes in a small folder inside it called <b>TradeReports answers</b>. When someone
+        else chooses the same folder, the tool reads the newest copy, so the questions are already
+        answered. The copies hold your business name, what each column means and a few report
+        totals. No customer names or invoice rows.
+      </>
+    ),
+  },
+  {
+    q: 'What does Remember my answers do?',
+    a: (
+      <>
+        It&apos;s a switch in the menu, on to start with. When it&apos;s on, this computer keeps
+        your business name and column answers, so you&apos;re not asked again, and a few totals for{' '}
+        <b>Since your last report</b>. Turn it off on a computer other people use: what was kept is
+        removed, nothing new is kept, and no answers copies go into a shared folder.
       </>
     ),
   },

@@ -165,7 +165,7 @@ describe('the saved file', () => {
 
   it('names the file with the date and business', () => {
     expect(savedFileName('2026-11-11', 'Smith Plumbing')).toBe(
-      '2026-11-11 Smith Plumbing saved answers.json',
+      '2026-11-11 Smith Plumbing answers.json',
     );
   });
 });

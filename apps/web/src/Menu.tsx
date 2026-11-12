@@ -1,11 +1,15 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Toggle } from './Toggle';
 
 interface MenuProps {
   dark: boolean;
   calm: boolean;
+  remember: boolean;
   onDark: (dark: boolean) => void;
   onCalm: (calm: boolean) => void;
+  onRemember: (on: boolean) => void;
+  // the copy and open buttons for taking answers to another computer
+  answers: ReactNode;
   onClear: () => void;
 }
 
@@ -28,7 +32,16 @@ const LEGAL = [
 ];
 
 // the ☰ button and the panel that swings in from the right
-export function Menu({ dark, calm, onDark, onCalm, onClear }: MenuProps) {
+export function Menu({
+  dark,
+  calm,
+  remember,
+  onDark,
+  onCalm,
+  onRemember,
+  answers,
+  onClear,
+}: MenuProps) {
   const [open, setOpen] = useState(false);
   const [cleared, setCleared] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
@@ -109,6 +122,15 @@ export function Menu({ dark, calm, onDark, onCalm, onClear }: MenuProps) {
           <div style={step()}>
             <Toggle label="Reduce motion" on={calm} onChange={onCalm} />
           </div>
+          <div style={step()}>
+            <Toggle label="Remember my answers" on={remember} onChange={onRemember} />
+            <p className="menu-note">
+              {remember
+                ? 'Your business name and column answers are kept on this computer.'
+                : 'Nothing is kept. The tool asks again each time.'}
+            </p>
+          </div>
+          <div style={step()}>{answers}</div>
           <div style={step()}>
             <button
               type="button"

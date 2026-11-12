@@ -1,5 +1,6 @@
 import type { VatStagger } from '@tradereports/core';
 import type { Business } from './files';
+import { remembering } from './remember';
 
 // The business name and VAT quarters are kept on this device only, so they don't have to
 // be typed again. "Clear my saved data" in the menu removes them.
@@ -23,6 +24,8 @@ export function loadBusiness(): Business {
 }
 
 export function saveBusiness(business: Business): void {
+  // switched off in Settings: keep nothing
+  if (!remembering()) return;
   try {
     localStorage.setItem(KEY, JSON.stringify(business));
   } catch {
