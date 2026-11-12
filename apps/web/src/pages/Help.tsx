@@ -130,6 +130,17 @@ const QUESTIONS: { q: string; a: ReactNode }[] = [
     ),
   },
   {
+    q: 'Do you track me?',
+    a: (
+      <>
+        No. We count totals, like how many reports were made this month, with a service that uses no
+        cookies and keeps no IP addresses. Nothing about your files or figures is sent. The{' '}
+        <a href="#/privacy">Privacy page</a> lists exactly what is counted. To stop it, turn off{' '}
+        <b>Count my visits anonymously</b> in the menu.
+      </>
+    ),
+  },
+  {
     q: 'Can I trust the figures?',
     a: (
       <>

@@ -17,6 +17,7 @@ import { loadBusiness, saveBusiness } from './tool/business';
 import { forgetFolder } from './tool/folder';
 import { loadMemory, saveMemory } from './tool/memory';
 import { remembering, setRemembering } from './tool/remember';
+import { countPage, counting, setCounting } from './count';
 import { CopyAnswers, OpenSaved } from './tool/Saved';
 import {
   applySettings,
@@ -71,6 +72,12 @@ export function App() {
     else window.scrollTo(0, 0);
   }, [hash]);
 
+  // anonymous page count (nothing is sent if switched off)
+  useEffect(() => {
+    countPage(hash.split('?')[0] ?? '', document.title);
+  }, [hash]);
+  const [count, setCount] = useState(counting);
+
   const Page = PAGES[hash];
   return (
     <>
@@ -103,6 +110,11 @@ export function App() {
           saveCalm(on);
         }}
         remember={remember}
+        count={count}
+        onCount={(on) => {
+          setCounting(on);
+          setCount(on);
+        }}
         onRemember={(on) => {
           setRemembering(on);
           setRemember(on);
@@ -128,6 +140,7 @@ export function App() {
           // and forget the chosen folder (the folder and its files are left alone)
           void forgetFolder();
           setRemember(true);
+          setCount(true);
           setTheme(initialTheme());
           setCalm(initialCalm());
           // the business name goes too, and the tool starts over

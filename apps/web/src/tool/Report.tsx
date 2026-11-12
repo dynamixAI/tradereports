@@ -7,6 +7,7 @@ import { Trends } from './Trends';
 import { Download } from './Download';
 import { FolderPicker } from './FolderPicker';
 import { remembering } from './remember';
+import { countReport } from '../count';
 import { Since } from './Since';
 import {
   lastBefore,
@@ -73,6 +74,10 @@ export function Report({
   const [previous] = useState(() => lastBefore(memory, session));
 
   // remember this report's totals, and the answers for every fully answered sheet
+  useEffect(() => {
+    // anonymous count: a report was made (once per visit)
+    countReport();
+  }, []);
   useEffect(() => {
     let next = recordSnapshot(memory, snapshotOf(report, session));
     for (const file of files) {

@@ -67,10 +67,35 @@ export function Privacy() {
         security. We can&apos;t see those logs. GitHub&apos;s own privacy statement explains how it
         handles them.
       </p>
+      <p>We don&apos;t use cookies or advertising, and we don&apos;t track you.</p>
+
+      <h2>What we count</h2>
       <p>
-        We don&apos;t use cookies, advertising, or tracking. We don&apos;t count visitors yet. If we
-        start, it will be with a service that uses no cookies and keeps no IP addresses, and
-        we&apos;ll update this page first.
+        To know whether the tool is useful, we count totals with GoatCounter, a privacy-friendly
+        counting service. It uses no cookies and doesn&apos;t keep IP addresses. From the request,
+        it works out roughly which browser, device type and country, then throws the address away.
+        We see only totals, never a person. What gets counted:
+      </p>
+      <ul>
+        <li>which page was opened, such as Help or the tool</li>
+        <li>
+          how far people get: tool opened, files added, the Check columns step, PowerPoint
+          downloaded, a copy or team answers brought in
+        </li>
+        <li>
+          when a report is made, which band it falls in on that computer: 1st, 2nd to 5th, 6th to
+          20th, or more than 20
+        </li>
+        <li>once a month, that a computer made a report that month</li>
+      </ul>
+      <p>
+        Nothing about your files, your business, your customers or your figures is ever sent. For
+        the bands and the month, this computer keeps a small tally (see{' '}
+        <a href="#/storage">Cookies and storage</a>). We rely on the UK&apos;s exception for
+        statistics, which doesn&apos;t need your consent but does need a free way to opt out: turn
+        off <b>Count my visits anonymously</b> in the menu and nothing is counted from that
+        computer, and the tally is removed. If your browser sends a Global Privacy Control signal,
+        we treat that as opting out too.
       </p>
 
       <h2>If you email us</h2>

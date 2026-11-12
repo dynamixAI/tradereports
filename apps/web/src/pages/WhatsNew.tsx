@@ -8,6 +8,7 @@ const CHANGES: { date: string; items: string[] }[] = [
       'Teams sharing a folder share answers too: one person answers the column questions, everyone gets them.',
       'New switch in the menu: Remember my answers. Turn it off on a shared computer.',
       'Copy my answers to another computer has moved into the menu.',
+      'Anonymous counting of totals, with no cookies or IDs, and a switch in the menu to turn it off.',
     ],
   },
   {
