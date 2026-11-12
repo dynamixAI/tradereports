@@ -5,6 +5,8 @@ interface MenuProps {
   dark: boolean;
   calm: boolean;
   remember: boolean;
+  count: boolean;
+  onCount: (on: boolean) => void;
   onDark: (dark: boolean) => void;
   onCalm: (calm: boolean) => void;
   onRemember: (on: boolean) => void;
@@ -36,6 +38,8 @@ export function Menu({
   dark,
   calm,
   remember,
+  count,
+  onCount,
   onDark,
   onCalm,
   onRemember,
@@ -128,6 +132,19 @@ export function Menu({
               {remember
                 ? 'Your business name and column answers are kept on this computer.'
                 : 'Nothing is kept. The tool asks again each time.'}
+            </p>
+          </div>
+          <div style={step()}>
+            <Toggle label="Count my visits anonymously" on={count} onChange={onCount} />
+            <p className="menu-note">
+              {count ? (
+                <>
+                  Only totals, like how many reports were made. No cookies, no IDs.{' '}
+                  <a href="#/privacy">What is counted</a>
+                </>
+              ) : (
+                'Nothing is counted from this computer.'
+              )}
             </p>
           </div>
           <div style={step()}>{answers}</div>

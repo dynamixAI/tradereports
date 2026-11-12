@@ -23,6 +23,18 @@ const ITEMS = [
     what: 'Only if you turned off Remember my answers: a note to keep nothing.',
   },
   {
+    name: 'tr-reports',
+    what: 'How many visits on this computer made a report. Only the band (1st, 2nd to 5th, 6th to 20th, more than 20) is ever counted, never this number. Removed if you turn off counting.',
+  },
+  {
+    name: 'tr-active',
+    what: 'The month this computer last made a report, so "active this month" is counted once a month. Removed if you turn off counting.',
+  },
+  {
+    name: 'tr-count',
+    what: 'Only if you turned off Count my visits anonymously: a note to count nothing.',
+  },
+  {
     name: 'tr-folder',
     what: 'Only if you chose a folder: which folder your reports go into. Chrome and Edge keep this in their own small database rather than with the others. The folder and its files stay yours; this only points to it.',
   },

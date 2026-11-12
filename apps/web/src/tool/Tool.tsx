@@ -26,6 +26,7 @@ import { mergeMemory, readSavedFile, saveMemory, type Memory, type SavedFile } f
 import { allowedFolder, newestAnswers } from './folder';
 import { FolderPicker } from './FolderPicker';
 import { saveBusiness } from './business';
+import { countStep } from '../count';
 
 const ACCEPT = '.csv,.txt,.xlsx,.xls,.ods';
 const PREVIEW_ROWS = 5;
@@ -56,13 +57,15 @@ export function Tool({ state, onChange }: ToolProps) {
     [onChange],
   );
   // a saved file was opened: with a name it can go straight to adding files
-  const opened = (business: Business, memory: Memory) =>
+  const opened = (business: Business, memory: Memory) => {
+    countStep('copy-opened');
     onChange((s) => ({
       ...s,
       business,
       memory,
       step: s.step === 'business' && business.name.trim() ? 'add' : s.step,
     }));
+  };
   // answers left in the shared folder by someone else (or this person on another computer)
   const team = useCallback(
     (file: SavedFile) =>
@@ -75,6 +78,7 @@ export function Tool({ state, onChange }: ToolProps) {
         }
         saveMemory(memory);
         saveBusiness(business);
+        countStep('team-answers-used');
         return {
           ...s,
           memory,
@@ -109,7 +113,12 @@ export function Tool({ state, onChange }: ToolProps) {
   // braces matter: newer browsers return a promise from scrollTo, which React can't clean up
   useEffect(() => {
     window.scrollTo(0, 0);
+    // anonymous funnel: how far people get (each counts once per visit)
+    if (state.step === 'check') countStep('check-columns-opened');
   }, [state.step]);
+  useEffect(() => {
+    countStep('tool-opened');
+  }, []);
 
   // read files one after another, adding each as it's done
   async function take(files: File[]) {
@@ -119,6 +128,7 @@ export function Tool({ state, onChange }: ToolProps) {
         const upload = await readUpload(file.name, new Uint8Array(await file.arrayBuffer()));
         onChange((s) => addUpload(s, upload));
       }
+      if (files.length) countStep('files-added');
     } finally {
       setBusy(false);
     }

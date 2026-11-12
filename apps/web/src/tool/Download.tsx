@@ -3,6 +3,7 @@ import { buildDeck, deckFileName } from './deck';
 import { readyFolder, saveFile, savedMessage, writeAnswersCopy } from './folder';
 import { savedFile, savedFileName, type Memory } from './memory';
 import { remembering } from './remember';
+import { countStep } from '../count';
 import type { ToolReport } from './report';
 import type { Business, ToolFile } from './files';
 
@@ -51,6 +52,7 @@ export function Download({
         }
       }
       onSaved(note);
+      countStep('powerpoint-downloaded');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong making the file.');
     } finally {

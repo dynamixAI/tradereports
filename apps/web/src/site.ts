@@ -7,6 +7,8 @@ export const SITE = {
   email: 'dynamixai.tradereports@outlook.com',
   // the date the legal pages last changed
   updated: '12 November 2026',
+  // GoatCounter code (the "tradereports" in tradereports.goatcounter.com); empty sends nothing
+  counter: '',
 };
 
 // an email link with the subject and a starting message filled in
