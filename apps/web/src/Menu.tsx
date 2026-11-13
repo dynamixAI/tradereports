@@ -16,21 +16,21 @@ interface MenuProps {
 }
 
 const PAGES = [
-  { href: '#/', label: 'Home' },
-  { href: '#/how', label: 'How it works' },
-  { href: '#/new', label: "What's new" },
-  { href: '#/request', label: 'Request a report' },
-  { href: '#/help', label: 'Help and FAQ' },
-  { href: '#/about', label: 'About' },
+  { href: '/', label: 'Home' },
+  { href: '/#how', label: 'How it works' },
+  { href: '/new', label: "What's new" },
+  { href: '/request', label: 'Request a report' },
+  { href: '/help', label: 'Help and FAQ' },
+  { href: '/about', label: 'About' },
 ];
 
 const LEGAL = [
-  { href: '#/privacy', label: 'Privacy' },
-  { href: '#/terms', label: 'Terms' },
-  { href: '#/storage', label: 'Cookies and storage' },
-  { href: '#/accessibility', label: 'Accessibility' },
-  { href: '#/contact', label: 'Contact' },
-  { href: '#/licences', label: 'Licences' },
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/terms', label: 'Terms' },
+  { href: '/storage', label: 'Cookies and storage' },
+  { href: '/accessibility', label: 'Accessibility' },
+  { href: '/contact', label: 'Contact' },
+  { href: '/licences', label: 'Licences' },
 ];
 
 // the ☰ button and the panel that swings in from the right
@@ -104,7 +104,7 @@ export function Menu({
       </button>
       <div className="backdrop" onClick={close} aria-hidden="true" />
       <nav id="menu-panel" ref={panel} className="panel" aria-label="Menu" inert={!open}>
-        <a className="try menu-try" href="#/app" onClick={close} style={step()}>
+        <a className="try menu-try" href="/app" onClick={close} style={step()}>
           Try the tool
         </a>
         <ul className="menu-links">
@@ -140,7 +140,7 @@ export function Menu({
               {count ? (
                 <>
                   Only totals, like how many reports were made. No cookies, no IDs.{' '}
-                  <a href="#/privacy">What is counted</a>
+                  <a href="/privacy">What is counted</a>
                 </>
               ) : (
                 'Nothing is counted from this computer.'

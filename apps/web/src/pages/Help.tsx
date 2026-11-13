@@ -28,7 +28,7 @@ const QUESTIONS: { q: string; a: ReactNode }[] = [
     a: (
       <>
         No. They are read by your browser, on your computer, and never sent to us or anyone else.
-        See <a href="#/privacy">Privacy</a>.
+        See <a href="/privacy">Privacy</a>.
       </>
     ),
   },
@@ -135,7 +135,7 @@ const QUESTIONS: { q: string; a: ReactNode }[] = [
       <>
         No. We count totals, like how many reports were made this month, with a service that uses no
         cookies and keeps no IP addresses. Nothing about your files or figures is sent. The{' '}
-        <a href="#/privacy">Privacy page</a> lists exactly what is counted. To stop it, turn off{' '}
+        <a href="/privacy">Privacy page</a> lists exactly what is counted. To stop it, turn off{' '}
         <b>Count my visits anonymously</b> in the menu.
       </>
     ),

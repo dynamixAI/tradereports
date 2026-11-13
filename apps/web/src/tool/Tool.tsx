@@ -181,7 +181,7 @@ export function Tool({ state, onChange, onLeaveExample }: ToolProps) {
           />
           <OpenSaved business={state.business} memory={state.memory} onOpened={opened} />
           <p className="field-help">
-            Just looking? <a href="#/example">See an example report</a> made from made-up files.
+            Just looking? <a href="/example">See an example report</a> made from made-up files.
           </p>
           {/* a team folder can hold answers someone already gave */}
           <FolderPicker onTeam={team} lead="Shared team folder:" empty="none yet" />

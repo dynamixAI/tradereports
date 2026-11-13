@@ -36,11 +36,11 @@ export function Landing({ dark, calm }: { dark: boolean; calm: boolean }) {
             seconds, not hours.
           </p>
           <div className="hero-ctas">
-            <a className="try" href="#/app">
+            <a className="try" href="/app">
               Try it free
             </a>
             {/* a full report from made-up files, no upload needed */}
-            <a className="ghost see-example" href="#/example">
+            <a className="ghost see-example" href="/example">
               See an example
             </a>
           </div>
@@ -80,10 +80,10 @@ export function Landing({ dark, calm }: { dark: boolean; calm: boolean }) {
           <b>Free. No sign-up. Your file never leaves your computer.</b>
         </p>
         <div className="hero-ctas">
-          <a className="try" href="#/app">
+          <a className="try" href="/app">
             Try it free
           </a>
-          <a className="ghost see-example" href="#/example">
+          <a className="ghost see-example" href="/example">
             See an example
           </a>
         </div>

@@ -124,7 +124,7 @@ function send(hit: Hit): void {
   if (!navigator.sendBeacon?.(url)) new Image().src = url;
 }
 
-// a page was opened; the hash route is the page ("#/help" counts as "/help")
+// a page was opened ("/help"); old "#/help" style routes count the same way
 export function countPage(route: string, title: string): void {
   send({ path: route.replace(/^#/, '') || '/', title });
 }

@@ -3,6 +3,7 @@ node_modules/
 
 # build output and test coverage
 dist/
+dist-ssr/
 build/
 coverage/
 

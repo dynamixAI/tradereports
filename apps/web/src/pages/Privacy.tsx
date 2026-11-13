@@ -32,7 +32,7 @@ export function Privacy() {
         storage, on this computer only: your theme and motion settings, your business name and VAT
         quarters, the answers you gave about your spreadsheet columns, and a few totals from each
         report so the next one can show what changed. No customer names or invoice rows are kept.
-        The <a href="#/storage">Cookies and storage</a> page lists every item.
+        The <a href="/storage">Cookies and storage</a> page lists every item.
       </p>
       <p>
         You can remove all of it at any time with <b>Clear my saved data</b> in the menu, or by
@@ -91,7 +91,7 @@ export function Privacy() {
       <p>
         Nothing about your files, your business, your customers or your figures is ever sent. For
         the bands and the month, this computer keeps a small tally (see{' '}
-        <a href="#/storage">Cookies and storage</a>). We rely on the UK&apos;s exception for
+        <a href="/storage">Cookies and storage</a>). We rely on the UK&apos;s exception for
         statistics, which doesn&apos;t need your consent but does need us to tell you and give a
         free way to opt out. A note at the bottom of the screen says so on your first visit, with a
         Turn off button. You can also turn off <b>Count my visits anonymously</b> in the menu and
@@ -119,7 +119,7 @@ export function Privacy() {
       <h2>Changes</h2>
       <p>
         If this page changes, the date at the top changes too, and we&apos;ll say so on the{' '}
-        <a href="#/new">What&apos;s new</a> page.
+        <a href="/new">What&apos;s new</a> page.
       </p>
     </Page>
   );
