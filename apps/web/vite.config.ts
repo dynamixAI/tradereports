@@ -22,8 +22,8 @@ function securityPolicy(): Plugin {
 }
 
 export default defineConfig({
-  // GitHub Pages serves the site from /tradereports/
-  base: '/tradereports/',
+  // served from the root of tradereports.co.uk
+  base: '/',
   plugins: [react(), securityPolicy()],
   build: {
     target: 'es2022',
