@@ -5,6 +5,10 @@ on:
     branches: [main]
   # lets you re-run a deploy by hand from the Actions tab
   workflow_dispatch:
+  # rebuild every morning so guides with a publish date go live on that day
+  # (05:17 UTC is 05:17 in winter and 06:17 in summer, UK time)
+  schedule:
+    - cron: '17 5 * * *'
 
 # by default the workflow can only read the code
 permissions:

@@ -1,7 +1,7 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { buildCsp } from './src/csp';
-import { compileGuide } from './src/guides/compile';
+import { compileGuide, isLive, todayInLondon } from './src/guides/compile';
 import { SITE } from './src/site';
 
 // what the page is allowed to load and contact; see src/csp.ts
@@ -22,14 +22,24 @@ function securityPolicy(): Plugin {
   };
 }
 
-// guides are written in Markdown; this turns each one into HTML while building
+// guides are written in Markdown; this turns each one into HTML while building.
+// A guide with a later publish date is left out of the built site until that day
+// (the daily deploy picks it up). On your own computer (npm run dev) you see them all.
 function guides(): Plugin {
+  let building = false;
+  // GUIDES_TODAY=2026-12-01 npm run build shows the site as it will be on that day
+  const today = process.env.GUIDES_TODAY ?? todayInLondon();
   return {
     name: 'guides',
+    configResolved(config) {
+      building = config.command === 'build';
+    },
     transform(code, id) {
       if (!id.endsWith('.md')) return null;
       const slug = id.split('/').pop()?.replace(/\.md$/, '') ?? '';
-      return { code: `export default ${JSON.stringify(compileGuide(code, slug))};`, map: null };
+      const guide = compileGuide(code, slug);
+      const out = building && !isLive(guide.published, today) ? null : guide;
+      return { code: `export default ${JSON.stringify(out)};`, map: null };
     },
   };
 }

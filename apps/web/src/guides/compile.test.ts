@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { anchor, compileGuide, readFrontMatter } from './compile';
+import { anchor, compileGuide, isLive, readFrontMatter, todayInLondon } from './compile';
 
 const GUIDE = `---
 title: Chasing an invoice
@@ -43,6 +43,31 @@ describe('guides', () => {
     expect(() =>
       compileGuide('---\ntitle: a\ndescription: b\nupdated: 13/11/2026\n---\n', 'x'),
     ).toThrow('updated');
+  });
+
+  it('is live straight away unless it has a later publish date', () => {
+    expect(compileGuide(GUIDE, 'chase').published).toBe('2026-11-13');
+    const later = GUIDE.replace(
+      'updated: 2026-11-13',
+      'updated: 2026-11-24\npublished: 2026-11-24',
+    );
+    expect(compileGuide(later, 'chase').published).toBe('2026-11-24');
+    expect(() => compileGuide(GUIDE.replace('updated:', 'published: soon\nupdated:'), 'x')).toThrow(
+      '"published" must look like',
+    );
+  });
+
+  it('goes live on its publish date, not the day before', () => {
+    expect(isLive('2026-11-24', '2026-11-23')).toBe(false);
+    expect(isLive('2026-11-24', '2026-11-24')).toBe(true);
+    expect(isLive('2026-11-24', '2026-12-01')).toBe(true);
+  });
+
+  it('uses the UK date, even late at night in summer', () => {
+    // 23:30 UTC on 30 June is already 1 July in London (BST)
+    expect(todayInLondon(new Date('2026-06-30T23:30:00Z'))).toBe('2026-07-01');
+    // 23:30 UTC in winter is still the same day in London
+    expect(todayInLondon(new Date('2026-12-01T23:30:00Z'))).toBe('2026-12-01');
   });
 
   it('makes tidy anchors', () => {

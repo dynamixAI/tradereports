@@ -1,14 +1,22 @@
 // Every guide in this folder, ready to show. The .md files are turned into HTML
 // by the "guides" plugin in vite.config.ts.
 import type { Route } from '../routes';
-import type { CompiledGuide } from './compile';
+import { todayInLondon, type CompiledGuide } from './compile';
 
-const files = import.meta.glob<CompiledGuide>('./*.md', { eager: true, import: 'default' });
+const files = import.meta.glob<CompiledGuide | null>('./*.md', {
+  eager: true,
+  import: 'default',
+});
 
-// newest first
-export const GUIDES: CompiledGuide[] = Object.values(files).sort((a, b) =>
-  b.updated.localeCompare(a.updated),
-);
+// newest first; guides not due yet arrive as null in the built site
+export const GUIDES: CompiledGuide[] = Object.values(files)
+  .filter((g): g is CompiledGuide => g !== null)
+  .sort((a, b) => b.published.localeCompare(a.published));
+
+// only true on your own computer, where upcoming guides are shown for checking
+export function scheduled(g: CompiledGuide): boolean {
+  return g.published > todayInLondon();
+}
 
 export function findGuide(path: string): CompiledGuide | undefined {
   const slug = /^\/guides\/([a-z0-9-]+)$/.exec(path)?.[1];
