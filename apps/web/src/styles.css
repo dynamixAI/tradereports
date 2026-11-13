@@ -1552,6 +1552,15 @@ button.s-card:hover {
   padding-left: 22px;
   margin: 0 0 14px;
 }
+.guide-scheduled {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 4px 12px;
+  border: 1px dashed var(--copper);
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--copper);
+}
 /* message templates and key points */
 .prose blockquote {
   margin: 0 0 18px;

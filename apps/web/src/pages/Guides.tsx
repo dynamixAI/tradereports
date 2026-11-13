@@ -1,4 +1,4 @@
-import { GUIDES, longDate } from '../guides';
+import { GUIDES, longDate, scheduled } from '../guides';
 import { Page } from './Page';
 
 // the list of guides
@@ -15,7 +15,9 @@ export function Guides() {
               <span className="guide-card-title">{g.title}</span>
               <span className="guide-card-text">{g.description}</span>
               <span className="guide-card-meta">
-                {g.minutes} min read · Updated {longDate(g.updated)}
+                {scheduled(g)
+                  ? `Not live yet: goes live on ${longDate(g.published)}`
+                  : `${g.minutes} min read · Updated ${longDate(g.updated)}`}
               </span>
             </a>
           </li>

@@ -1,14 +1,17 @@
 import type { CompiledGuide } from '../guides/compile';
-import { GUIDES, longDate } from '../guides';
+import { GUIDES, longDate, scheduled } from '../guides';
 
 // one guide: the words, then a nudge to try the tool, then the other guides
 export function Guide({ guide }: { guide: CompiledGuide }) {
-  const others = GUIDES.filter((g) => g.slug !== guide.slug).slice(0, 3);
+  const others = GUIDES.filter((g) => g.slug !== guide.slug && !scheduled(g)).slice(0, 3);
   return (
     <main id="main" tabIndex={-1} className="page guide">
       <p className="guide-back">
         <a href="/guides/">← All guides</a>
       </p>
+      {scheduled(guide) && (
+        <p className="guide-scheduled">Not live yet: goes live on {longDate(guide.published)}</p>
+      )}
       <h1>{guide.title}</h1>
       <p className="page-intro">{guide.description}</p>
       <p className="page-updated">

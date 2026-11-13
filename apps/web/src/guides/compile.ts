@@ -7,6 +7,8 @@ export interface GuideMeta {
   description: string;
   // YYYY-MM-DD; shown as "Updated …" and used in the sitemap
   updated: string;
+  // YYYY-MM-DD; the guide stays off the live site until this day (UK time)
+  published: string;
 }
 
 export interface CompiledGuide extends GuideMeta {
@@ -57,13 +59,30 @@ const marked = new Marked({
   },
 });
 
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+// today's date in the UK, as YYYY-MM-DD
+export function todayInLondon(now = new Date()): string {
+  // en-CA writes dates as 2026-11-13
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(now);
+}
+
+// a guide goes live on its publish date, not before
+export function isLive(published: string, today: string): boolean {
+  return published <= today;
+}
+
 export function compileGuide(source: string, slug: string): CompiledGuide {
   const { meta, body } = readFrontMatter(source);
   for (const key of ['title', 'description', 'updated'] as const) {
     if (!meta[key]) throw new Error(`Guide "${slug}" is missing "${key}" at the top`);
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(meta.updated ?? '')) {
-    throw new Error(`Guide "${slug}": "updated" must look like 2026-11-13`);
+  // no publish date means it's live straight away
+  meta.published ??= meta.updated ?? '';
+  for (const key of ['updated', 'published'] as const) {
+    if (!DATE.test(meta[key] ?? '')) {
+      throw new Error(`Guide "${slug}": "${key}" must look like 2026-11-13`);
+    }
   }
   const words = body.split(/\s+/).filter(Boolean).length;
   return {
@@ -71,6 +90,7 @@ export function compileGuide(source: string, slug: string): CompiledGuide {
     title: meta.title ?? '',
     description: meta.description ?? '',
     updated: meta.updated ?? '',
+    published: meta.published ?? '',
     html: marked.parse(body, { async: false }),
     // about 220 words a minute, never less than 1
     minutes: Math.max(1, Math.round(words / 220)),
