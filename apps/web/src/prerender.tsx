@@ -3,6 +3,7 @@
 import type { JSX } from 'react';
 import { renderToString } from 'react-dom/server';
 import { Footer } from './Footer';
+import { Logo } from './Logo';
 import { Landing } from './landing/Landing';
 import { About } from './pages/About';
 import { Accessibility } from './pages/Accessibility';
@@ -69,9 +70,7 @@ export function render(path: string): string {
   return renderToString(
     <>
       <header className="top">
-        <a className="logo" href="/">
-          Trade<span>Reports</span>
-        </a>
+        <Logo />
       </header>
       {body(path)}
       <Footer />

@@ -73,10 +73,22 @@ main:focus {
   padding: 0 84px 0 28px;
 }
 .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
   font-weight: 700;
+  letter-spacing: -0.01em;
   text-decoration: none;
 }
-.logo span {
+/* the arrow is about as tall as the capital letters */
+.logo-mark {
+  width: 26px;
+  height: 26px;
+  fill: var(--copper);
+  flex: none;
+}
+.logo-word span {
   color: var(--copper);
 }
 /* opening section: words on the left, machine on the right */

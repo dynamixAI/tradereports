@@ -12,7 +12,7 @@ export const ORIGIN = 'https://tradereports.co.uk';
 export const ROUTES: Route[] = [
   {
     path: '/',
-    title: 'TradeReports: checked numbers from your job software exports',
+    title: 'TradeReports: Free invoice and VAT reports for UK tradespeople',
     description:
       'Turn your job software exports and spreadsheets into checked numbers: money owed, income, VAT and work not invoiced. Free, and your file never leaves your computer.',
     index: true,

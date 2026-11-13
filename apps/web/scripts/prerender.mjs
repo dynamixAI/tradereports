@@ -20,6 +20,24 @@ const template = await readFile(`${dist}/index.html`, 'utf8');
 // text going into HTML attributes
 const attr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
+// tells search engines this is a free web app for businesses (data only, never run)
+function appData() {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'TradeReports',
+    url: `${ORIGIN}/`,
+    description:
+      'Turns job software exports and spreadsheets into checked reports for UK tradespeople: money owed, income, VAT and work not invoiced.',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Any (runs in the browser)',
+    browserRequirements: 'Requires JavaScript',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'GBP' },
+    publisher: { '@type': 'Organization', name: 'DynamixAI', logo: `${ORIGIN}/icon-512.png` },
+  };
+  return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`;
+}
+
 function page(route, html) {
   const url = route === NOT_FOUND ? null : ORIGIN + route.path;
   const head = [
@@ -31,6 +49,12 @@ function page(route, html) {
     `<meta property="og:type" content="website" />`,
     `<meta property="og:site_name" content="TradeReports" />`,
     url ? `<meta property="og:url" content="${url}" />` : '',
+    `<meta property="og:image" content="${ORIGIN}/og-image.png" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
+    `<meta property="og:image:alt" content="TradeReports: Focus on your trade, not spreadsheets." />`,
+    `<meta name="twitter:card" content="summary_large_image" />`,
+    route.path === '/' ? appData() : '',
   ]
     .filter(Boolean)
     .join('\n    ');
