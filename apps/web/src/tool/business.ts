@@ -33,8 +33,9 @@ export function saveBusiness(business: Business): void {
   }
 }
 
+// short month names so the choice fits on a phone
 export const STAGGERS: { value: VatStagger; label: string }[] = [
-  { value: 1, label: 'March, June, September, December' },
-  { value: 2, label: 'January, April, July, October' },
-  { value: 3, label: 'February, May, August, November' },
+  { value: 1, label: 'Mar, Jun, Sep, Dec' },
+  { value: 2, label: 'Jan, Apr, Jul, Oct' },
+  { value: 3, label: 'Feb, May, Aug, Nov' },
 ];

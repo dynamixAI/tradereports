@@ -549,6 +549,8 @@ h2 {
 }
 .unlocks .tag {
   flex-shrink: 0;
+  max-width: 55%;
+  text-align: center;
   font-size: 12px;
   padding: 3px 10px;
   border-radius: 999px;
@@ -632,6 +634,40 @@ h2 {
 .steps li.done .step-n {
   background: var(--copper);
   color: #fff;
+}
+
+@media (max-width: 600px) {
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  .steps li > * {
+    width: 100%;
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 4px;
+    border-radius: 14px;
+    font-size: 12px;
+    line-height: 1.2;
+    text-align: center;
+  }
+  /* the card has less padding so there's more room for the words */
+  .card {
+    padding: 20px;
+  }
+  /* each "what your files unlock" row: the name, then its tag underneath */
+  .unlocks li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .unlocks .tag {
+    max-width: none;
+    text-align: left;
+  }
 }
 
 /* which files are in */
@@ -1477,6 +1513,8 @@ button.s-card:hover {
 /* ---------- your business ---------- */
 .biz-form {
   display: grid;
+  /* minmax(0, …) lets the column shrink on narrow phones instead of spilling out */
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   max-width: 560px;
 }
@@ -1490,6 +1528,9 @@ button.s-card:hover {
 .field input,
 .field select,
 .field textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   font: inherit;
   color: var(--ink);
   background: var(--bg);
@@ -1583,12 +1624,13 @@ button.s-card:hover {
 
 /* ---------- saved answers ---------- */
 .open-saved {
-  margin: 14px 0 0;
+  margin: 14px 0 18px;
   display: grid;
   gap: 6px;
 }
 .open-saved .link {
   justify-self: start;
+  text-align: left;
 }
 
 /* ---------- the one-time note about counting ---------- */
