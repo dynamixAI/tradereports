@@ -643,7 +643,13 @@ h2 {
     gap: 6px;
     margin-bottom: 24px;
   }
+  /* every box as tall as the tallest, so a one-line label doesn't make a short box */
+  .steps li {
+    display: flex;
+  }
   .steps li > * {
+    flex: 1;
+    justify-content: flex-start;
     width: 100%;
     box-sizing: border-box;
     flex-direction: column;
