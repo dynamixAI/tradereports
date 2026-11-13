@@ -1,5 +1,5 @@
 // After the normal build: write one ready-made HTML file per page, plus the sitemap and robots.txt.
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
 
@@ -13,7 +13,9 @@ await build({
   logLevel: 'warn',
   build: { ssr: 'src/prerender.tsx', outDir: ssrOut, emptyOutDir: true },
 });
-const { render, ROUTES, NOT_FOUND, ORIGIN } = await import(`${ssrOut}/prerender.js`);
+const { render, ROUTES, NOT_FOUND, ORIGIN, GUIDE_PAGES, canonical } = await import(
+  `${ssrOut}/prerender.js`
+);
 
 const template = await readFile(`${dist}/index.html`, 'utf8');
 
@@ -38,15 +40,30 @@ function appData() {
   return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`;
 }
 
+// tells search engines a guide is an article, who wrote it and when (data only, never run)
+function articleData(route) {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: route.headline,
+    description: route.description,
+    dateModified: route.updated,
+    url: ORIGIN + route.path,
+    author: { '@type': 'Organization', name: 'DynamixAI', url: `${ORIGIN}/about` },
+    publisher: { '@type': 'Organization', name: 'DynamixAI', logo: `${ORIGIN}/icon-512.png` },
+  };
+  return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`;
+}
+
 function page(route, html) {
-  const url = route === NOT_FOUND ? null : ORIGIN + route.path;
+  const url = route === NOT_FOUND ? null : ORIGIN + canonical(route.path);
   const head = [
     `<title>${attr(route.title)}</title>`,
     `<meta name="description" content="${attr(route.description)}" />`,
     url ? `<link rel="canonical" href="${url}" />` : '<meta name="robots" content="noindex" />',
     `<meta property="og:title" content="${attr(route.title)}" />`,
     `<meta property="og:description" content="${attr(route.description)}" />`,
-    `<meta property="og:type" content="website" />`,
+    `<meta property="og:type" content="${route.headline ? 'article' : 'website'}" />`,
     `<meta property="og:site_name" content="TradeReports" />`,
     url ? `<meta property="og:url" content="${url}" />` : '',
     `<meta property="og:image" content="${ORIGIN}/og-image.png" />`,
@@ -55,6 +72,7 @@ function page(route, html) {
     `<meta property="og:image:alt" content="TradeReports: Focus on your trade, not spreadsheets." />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
     route.path === '/' ? appData() : '',
+    route.headline ? articleData(route) : '',
   ]
     .filter(Boolean)
     .join('\n    ');
@@ -68,17 +86,25 @@ function page(route, html) {
   return out;
 }
 
-// "/" is index.html, "/help" is help.html (GitHub Pages serves it without the .html)
-for (const route of ROUTES) {
-  const file = route.path === '/' ? 'index.html' : `${route.path.slice(1)}.html`;
-  await writeFile(`${dist}/${file}`, page(route, render(route.path)));
+// "/" is index.html, "/help" is help.html (GitHub Pages serves it without the .html).
+// The guides list is guides/index.html, so it can sit in the same folder as the guides.
+const fileFor = (path) =>
+  path === '/' ? 'index.html' : path === '/guides' ? 'guides/index.html' : `${path.slice(1)}.html`;
+await mkdir(`${dist}/guides`, { recursive: true });
+for (const route of [...ROUTES, ...GUIDE_PAGES]) {
+  await writeFile(`${dist}/${fileFor(route.path)}`, page(route, render(route.path)));
 }
 // GitHub Pages shows this for any address that doesn't exist
 await writeFile(`${dist}/404.html`, page(NOT_FOUND, render(NOT_FOUND.path)));
 
 const today = new Date().toISOString().slice(0, 10);
-const urls = ROUTES.filter((r) => r.index)
-  .map((r) => `  <url><loc>${ORIGIN}${r.path}</loc><lastmod>${today}</lastmod></url>`)
+// guides say when they last changed; other pages use the build date
+const urls = [...ROUTES, ...GUIDE_PAGES]
+  .filter((r) => r.index)
+  .map(
+    (r) =>
+      `  <url><loc>${ORIGIN}${canonical(r.path)}</loc><lastmod>${r.updated ?? today}</lastmod></url>`,
+  )
   .join('\n');
 await writeFile(
   `${dist}/sitemap.xml`,
@@ -90,4 +116,6 @@ await writeFile(
 );
 
 await rm(ssrOut, { recursive: true, force: true });
-console.log(`prerendered ${ROUTES.length + 1} pages, sitemap.xml and robots.txt`);
+console.log(
+  `prerendered ${ROUTES.length + GUIDE_PAGES.length + 1} pages (${GUIDE_PAGES.length} guides), sitemap.xml and robots.txt`,
+);

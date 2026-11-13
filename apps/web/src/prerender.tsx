@@ -16,8 +16,18 @@ import { Request } from './pages/Request';
 import { Storage } from './pages/Storage';
 import { Terms } from './pages/Terms';
 import { WhatsNew } from './pages/WhatsNew';
+import { Guide } from './pages/Guide';
+import { Guides } from './pages/Guides';
+import { GUIDES, findGuide, guideRoute } from './guides';
 
-export { NOT_FOUND, ORIGIN, ROUTES } from './routes';
+export { NOT_FOUND, ORIGIN, ROUTES, canonical } from './routes';
+
+// each guide's address and details, for its own HTML file, the sitemap and Google
+export const GUIDE_PAGES = GUIDES.map((g) => ({
+  ...guideRoute(g),
+  updated: g.updated,
+  headline: g.title,
+}));
 
 const PAGES: Record<string, () => JSX.Element> = {
   '/new': WhatsNew,
@@ -62,6 +72,9 @@ function body(path: string): JSX.Element {
   if (path === '/') return <Landing dark calm={false} />;
   if (path === '/app') return <ToolStandIn example={false} />;
   if (path === '/example') return <ToolStandIn example />;
+  if (path === '/guides') return <Guides />;
+  const guide = findGuide(path);
+  if (guide) return <Guide guide={guide} />;
   const Shown = PAGES[path];
   return Shown ? <Shown /> : <NotFound />;
 }
