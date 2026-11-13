@@ -2,6 +2,7 @@ import { useEffect, useState, type JSX } from 'react';
 import { Landing } from './landing/Landing';
 import { Menu } from './Menu';
 import { Footer } from './Footer';
+import { Logo } from './Logo';
 import { About } from './pages/About';
 import { Accessibility } from './pages/Accessibility';
 import { Contact } from './pages/Contact';
@@ -142,9 +143,7 @@ export function App() {
         Skip to content
       </a>
       <header className="top">
-        <a className="logo" href="/">
-          Trade<span>Reports</span>
-        </a>
+        <Logo />
       </header>
       <Menu
         dark={theme === 'dark'}

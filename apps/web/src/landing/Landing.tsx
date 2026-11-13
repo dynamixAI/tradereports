@@ -24,6 +24,7 @@ export function Landing({ dark, calm }: { dark: boolean; calm: boolean }) {
     <main id="main" tabIndex={-1}>
       <section className="hero">
         <div>
+          <p className="kicker">Free reports for UK tradespeople</p>
           <h1>
             Stop fixing
             <br />
