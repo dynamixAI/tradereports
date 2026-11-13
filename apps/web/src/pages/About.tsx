@@ -45,7 +45,7 @@ export function About() {
       </ul>
 
       <p>
-        Got an idea or a problem? <a href="#/contact">Get in touch</a>.
+        Got an idea or a problem? <a href="/contact">Get in touch</a>.
       </p>
     </Page>
   );

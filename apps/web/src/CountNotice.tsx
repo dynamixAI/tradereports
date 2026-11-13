@@ -16,7 +16,7 @@ export function CountNotice({ onTurnOff }: { onTurnOff: () => void }) {
     <section className="count-notice" aria-label="About counting">
       <p>
         We count visits anonymously: totals only, no cookies, nothing about your files.{' '}
-        <a href="#/privacy">What we count</a>
+        <a href="/privacy">What we count</a>
       </p>
       <div className="count-notice-actions">
         <button

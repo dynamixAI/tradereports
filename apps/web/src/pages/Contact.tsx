@@ -23,12 +23,12 @@ export function Contact() {
           said. Column names help too, without the rows.
         </li>
         <li>
-          Want a report the tool doesn&apos;t do yet? Use <a href="#/request">Request a report</a>.
+          Want a report the tool doesn&apos;t do yet? Use <a href="/request">Request a report</a>.
         </li>
       </ul>
       <p>
         If you email us, we&apos;ll see your email address and message and use them only to reply.
-        The <a href="#/privacy">Privacy</a> page says more.
+        The <a href="/privacy">Privacy</a> page says more.
       </p>
     </Page>
   );

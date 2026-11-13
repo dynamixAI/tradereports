@@ -1,6 +1,7 @@
 import { useEffect, useState, type JSX } from 'react';
 import { Landing } from './landing/Landing';
 import { Menu } from './Menu';
+import { Footer } from './Footer';
 import { About } from './pages/About';
 import { Accessibility } from './pages/Accessibility';
 import { Contact } from './pages/Contact';
@@ -11,6 +12,8 @@ import { Request } from './pages/Request';
 import { Storage } from './pages/Storage';
 import { Terms } from './pages/Terms';
 import { WhatsNew } from './pages/WhatsNew';
+import { Page } from './pages/Page';
+import { NOT_FOUND, clean, findRoute, navigate } from './routes';
 import { Tool } from './tool/Tool';
 import { emptyTool, type ToolState } from './tool/files';
 import { loadBusiness, saveBusiness } from './tool/business';
@@ -31,32 +34,65 @@ import {
   type Theme,
 } from './theme';
 
-// pages live after the # so GitHub Pages never needs to know about them
+// each address and the page it shows; the build also writes a ready-made HTML file for each
 const PAGES: Record<string, () => JSX.Element> = {
-  '#/new': WhatsNew,
-  '#/request': Request,
-  '#/help': Help,
-  '#/about': About,
-  '#/privacy': Privacy,
-  '#/terms': Terms,
-  '#/storage': Storage,
-  '#/accessibility': Accessibility,
-  '#/contact': Contact,
-  '#/licences': Licences,
+  '/new': WhatsNew,
+  '/request': Request,
+  '/help': Help,
+  '/about': About,
+  '/privacy': Privacy,
+  '/terms': Terms,
+  '/storage': Storage,
+  '/accessibility': Accessibility,
+  '/contact': Contact,
+  '/licences': Licences,
 };
 
-function useHash(): string {
-  const [hash, setHash] = useState(location.hash);
+// the page address, kept up to date as the visitor moves around
+function usePath(): string {
+  const [path, setPath] = useState(() => clean(location.pathname));
   useEffect(() => {
-    const onChange = () => setHash(location.hash);
-    addEventListener('hashchange', onChange);
-    return () => removeEventListener('hashchange', onChange);
+    const onChange = () => setPath(clean(location.pathname));
+    addEventListener('popstate', onChange);
+    return () => removeEventListener('popstate', onChange);
   }, []);
-  return hash;
+  return path;
+}
+
+// links to our own pages change page without reloading, so the tool keeps its files
+function useLinks(): void {
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+        return;
+      const a = e.target instanceof Element ? e.target.closest('a') : null;
+      if (!a || a.target || a.hasAttribute('download')) return;
+      const url = new URL(a.href, location.href);
+      // email links and other sites open as normal
+      if (url.origin !== location.origin) return;
+      // a jump to a section on this page: let the browser do it
+      if (url.pathname === location.pathname && url.hash) return;
+      e.preventDefault();
+      navigate(url.pathname + url.hash);
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, []);
+}
+
+function NotFound() {
+  return (
+    <Page title="Page not found" intro="That page doesn't exist, or it has moved.">
+      <p>
+        Go to the <a href="/">home page</a> or <a href="/app">make your report</a>.
+      </p>
+    </Page>
+  );
 }
 
 export function App() {
-  const hash = useHash();
+  const path = usePath();
+  useLinks();
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [calm, setCalm] = useState(initialCalm);
   // kept here so the files survive a visit to another page
@@ -70,27 +106,28 @@ export function App() {
 
   // new page: go to the top, or to the "how it works" section
   useEffect(() => {
-    if (hash === '#/how') document.getElementById('how')?.scrollIntoView();
+    if (location.hash === '#how') document.getElementById('how')?.scrollIntoView();
     else window.scrollTo(0, 0);
-  }, [hash]);
+  }, [path]);
 
-  // anonymous page count (nothing is sent if switched off)
+  // the tab title, then the anonymous page count (nothing is sent if switched off)
   useEffect(() => {
-    countPage(hash.split('?')[0] ?? '', document.title);
-  }, [hash]);
+    document.title = (findRoute(path) ?? NOT_FOUND).title;
+    countPage(path, document.title);
+  }, [path]);
   const [count, setCount] = useState(counting);
 
-  // #/example shows a report from made-up files; #/app always means the visitor's own tool
+  // /example shows a report from made-up files; /app always means the visitor's own tool
   const fresh = () => emptyTool(loadBusiness(), loadMemory());
   useEffect(() => {
-    if (hash === '#/example' && !tool.example) {
+    if (path === '/example' && !tool.example) {
       countStep('example-opened');
       void exampleTool().then(setTool);
     }
-    if (hash === '#/app' && tool.example) setTool(fresh());
-  }, [hash, tool.example]);
+    if (path === '/app' && tool.example) setTool(fresh());
+  }, [path, tool.example]);
 
-  const Page = PAGES[hash];
+  const Shown = PAGES[path];
   return (
     <>
       {/* jump to the content without changing the page address */}
@@ -105,7 +142,7 @@ export function App() {
         Skip to content
       </a>
       <header className="top">
-        <a className="logo" href="#/">
+        <a className="logo" href="/">
           Trade<span>Reports</span>
         </a>
       </header>
@@ -161,35 +198,28 @@ export function App() {
           setTool(emptyTool());
         }}
       />
-      {hash === '#/example' && !tool.example ? (
+      {path === '/example' && !tool.example ? (
         // a moment while the made-up files are read; the empty tool would count as a visit
         <main id="main" className="page">
           <p className="page-intro">Loading the example…</p>
         </main>
-      ) : hash === '#/app' || hash === '#/example' ? (
+      ) : path === '/app' || path === '/example' ? (
         <Tool
           state={tool}
           onChange={setTool}
           onLeaveExample={() => {
             setTool(fresh());
-            location.hash = '#/app';
+            navigate('/app');
           }}
         />
-      ) : Page ? (
-        <Page />
-      ) : (
+      ) : path === '/' ? (
         <Landing dark={theme === 'dark'} calm={calm} />
+      ) : Shown ? (
+        <Shown />
+      ) : (
+        <NotFound />
       )}
-      <footer className="foot">
-        <span>© 2026 DynamixAI</span>
-        <a href="#/privacy">Privacy</a>
-        <a href="#/terms">Terms</a>
-        <a href="#/storage">Cookies and storage</a>
-        <a href="#/accessibility">Accessibility</a>
-        <a href="#/contact">Contact</a>
-        <a href="#/about">About</a>
-        <a href="#/licences">Licences</a>
-      </footer>
+      <Footer />
       {/* once only: what is counted, and how to stop it */}
       {count && (
         <CountNotice
