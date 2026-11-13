@@ -3,6 +3,7 @@ export function Footer() {
   return (
     <footer className="foot">
       <span>© 2026 DynamixAI</span>
+      <a href="/guides/">Guides</a>
       <a href="/help">Help</a>
       <a href="/privacy">Privacy</a>
       <a href="/terms">Terms</a>

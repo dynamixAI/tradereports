@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ROUTES, clean, findRoute, fromOldHash } from './routes';
+import { ROUTES, canonical, clean, findRoute, fromOldHash } from './routes';
 
 describe('routes', () => {
   it('treats a trailing slash as the same page', () => {
@@ -7,6 +7,12 @@ describe('routes', () => {
     expect(clean('/')).toBe('/');
     expect(clean('')).toBe('/');
     expect(findRoute('/privacy/')?.path).toBe('/privacy');
+  });
+
+  it('gives the guides list its folder address', () => {
+    expect(canonical('/guides')).toBe('/guides/');
+    expect(canonical('/help')).toBe('/help');
+    expect(findRoute('/guides/')?.path).toBe('/guides');
   });
 
   it('turns old hash links into real addresses', () => {

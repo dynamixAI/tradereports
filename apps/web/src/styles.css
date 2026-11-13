@@ -1499,6 +1499,118 @@ button.s-card:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+/* ---------- guides ---------- */
+.guide-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+.guide-card {
+  display: grid;
+  gap: 8px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  color: inherit;
+  text-decoration: none;
+}
+.guide-card:hover {
+  border-color: var(--copper);
+}
+.prose a.guide-card {
+  text-decoration: none;
+}
+.guide-card-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+.guide-card-text {
+  color: var(--muted);
+}
+.guide-card-meta {
+  font-size: 13px;
+  color: var(--copper);
+}
+.guide .prose {
+  max-width: 720px;
+}
+.guide-back {
+  margin: 0 0 18px;
+  font-size: 14px;
+}
+.guide-back a {
+  color: var(--muted);
+}
+.prose h3 {
+  font-size: 18px;
+  margin: 28px 0 8px;
+}
+.prose ol {
+  padding-left: 22px;
+  margin: 0 0 14px;
+}
+/* message templates and key points */
+.prose blockquote {
+  margin: 0 0 18px;
+  padding: 16px 20px;
+  border-left: 4px solid var(--copper);
+  border-radius: 0;
+  background: var(--card);
+}
+.prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 18px;
+  font-size: 15px;
+}
+.prose th,
+.prose td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.prose th {
+  font-weight: 700;
+}
+.guide-cta {
+  max-width: 720px;
+  margin: 44px 0 0;
+  padding: 26px;
+  border: 1px solid var(--copper);
+  border-radius: 20px;
+  background: var(--card);
+}
+.guide-cta-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.guide-cta p:not(.guide-cta-title) {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.guide-more {
+  max-width: 720px;
+  margin: 36px 0 0;
+}
+.guide-more-title {
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.guide-more ul {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.9;
+}
+
 /* questions that open when clicked */
 .faq details {
   border-bottom: 1px solid var(--line);

@@ -20,6 +20,7 @@ const PAGES = [
   { href: '/#how', label: 'How it works' },
   { href: '/new', label: "What's new" },
   { href: '/request', label: 'Request a report' },
+  { href: '/guides/', label: 'Guides' },
   { href: '/help', label: 'Help and FAQ' },
   { href: '/about', label: 'About' },
 ];

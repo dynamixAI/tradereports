@@ -14,6 +14,9 @@ import { Storage } from './pages/Storage';
 import { Terms } from './pages/Terms';
 import { WhatsNew } from './pages/WhatsNew';
 import { Page } from './pages/Page';
+import { Guide } from './pages/Guide';
+import { Guides } from './pages/Guides';
+import { findGuide, guideRoute } from './guides';
 import { NOT_FOUND, clean, findRoute, navigate } from './routes';
 import { Tool } from './tool/Tool';
 import { emptyTool, type ToolState } from './tool/files';
@@ -113,7 +116,8 @@ export function App() {
 
   // the tab title, then the anonymous page count (nothing is sent if switched off)
   useEffect(() => {
-    document.title = (findRoute(path) ?? NOT_FOUND).title;
+    const guide = findGuide(path);
+    document.title = (findRoute(path) ?? (guide && guideRoute(guide)) ?? NOT_FOUND).title;
     countPage(path, document.title);
   }, [path]);
   const [count, setCount] = useState(counting);
@@ -129,6 +133,7 @@ export function App() {
   }, [path, tool.example]);
 
   const Shown = PAGES[path];
+  const guide = findGuide(path);
   return (
     <>
       {/* jump to the content without changing the page address */}
@@ -213,6 +218,10 @@ export function App() {
         />
       ) : path === '/' ? (
         <Landing dark={theme === 'dark'} calm={calm} />
+      ) : path === '/guides' ? (
+        <Guides />
+      ) : guide ? (
+        <Guide guide={guide} />
       ) : Shown ? (
         <Shown />
       ) : (

@@ -32,6 +32,13 @@ export const ROUTES: Route[] = [
     index: true,
   },
   {
+    path: '/guides',
+    title: 'Guides for tradespeople | TradeReports',
+    description:
+      'Plain-English guides for UK tradespeople: chasing unpaid invoices, late payment interest and VAT.',
+    index: true,
+  },
+  {
     path: '/help',
     title: 'Help and FAQ | TradeReports',
     description:
@@ -101,6 +108,12 @@ export const NOT_FOUND: Route = {
   description: 'That page does not exist.',
   index: false,
 };
+
+// the address Google should use. The guides list lives in a folder (next to each guide),
+// so its real address ends in a slash
+export function canonical(path: string): string {
+  return path === '/guides' ? '/guides/' : path;
+}
 
 // "/help/" and "/help" are the same page
 export function clean(path: string): string {
