@@ -4,9 +4,9 @@ export const SITE = {
   operator: 'DynamixAI, run by Pius Ajamma',
   owner: 'Pius Ajamma',
   place: 'Wigan, England',
-  email: 'tradereport.dynamixai@outlook.com',
+  email: 'info@tradereports.co.uk',
   // the date the legal pages last changed
-  updated: '12 November 2026',
+  updated: '13 November 2026',
   // GoatCounter code (the "tradereports" in tradereports.goatcounter.com); empty sends nothing
   counter: 'tradereports',
 };
