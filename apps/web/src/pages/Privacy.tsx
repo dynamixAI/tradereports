@@ -79,6 +79,14 @@ export function Privacy() {
       <ul>
         <li>which page was opened, such as Help or the tool</li>
         <li>
+          which website you came from, such as Google or LinkedIn: only the site&apos;s name, never
+          the page you were on or what you searched for
+        </li>
+        <li>
+          a campaign tag, if you followed one of our own links that has one (such as a link in a
+          LinkedIn post), so we know which posts are worth writing
+        </li>
+        <li>
           how far people get: tool opened, files added, the Check columns step, PowerPoint
           downloaded, a copy or team answers brought in
         </li>

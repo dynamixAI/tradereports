@@ -1,5 +1,6 @@
 // Anonymous counting with GoatCounter: no cookies, no IP addresses kept, no IDs.
-// What is sent: which page was opened, and a few totals (report made, PowerPoint
+// What is sent: which page was opened, which site the visit came from (just its name),
+// a campaign tag from our own links, and a few totals (report made, PowerPoint
 // downloaded and so on). Nothing about the files, the business or the person.
 // Switched off with "Count my visits anonymously" in Settings.
 import { SITE } from './site';
@@ -22,6 +23,30 @@ export interface Hit {
   title?: string;
   event?: boolean;
   bot?: boolean;
+  // the site the visit came from, such as https://www.linkedin.com (never the page)
+  ref?: string;
+  // a tag from one of our own links, such as linkedin-ai-post
+  campaign?: string;
+}
+
+// where the visit came from: only the other site's address, never the page or search,
+// and nothing when moving around our own site
+export function sourceSite(referrer: string, ownHost: string): string | undefined {
+  try {
+    const u = new URL(referrer);
+    if (!/^https?:$/.test(u.protocol) || u.hostname === ownHost) return undefined;
+    return u.origin;
+  } catch {
+    return undefined;
+  }
+}
+
+// a campaign tag we put on our own links: ?utm_campaign=linkedin-ai-post
+// (letters, numbers and dashes only, so nothing personal can sneak through)
+export function campaignFrom(search: string): string | undefined {
+  const q = new URLSearchParams(search);
+  const tag = q.get('utm_campaign') ?? q.get('ref');
+  return tag && /^[a-z0-9_-]{1,60}$/i.test(tag) ? tag.toLowerCase() : undefined;
 }
 
 // GoatCounter's /count address with the hit in the query
@@ -31,6 +56,9 @@ export function countUrl(code: string, hit: Hit): string {
   if (hit.event) q.set('e', 'true');
   // 151 is GoatCounter's number for "automated browser"
   if (hit.bot) q.set('b', '151');
+  if (hit.ref) q.set('r', hit.ref);
+  // GoatCounter reads the campaign from the query string it's given
+  if (hit.campaign) q.set('q', `?utm_campaign=${hit.campaign}`);
   q.set('rnd', Math.random().toString(36).slice(2, 8));
   return `https://${code}.goatcounter.com/count?${q.toString()}`;
 }
@@ -125,8 +153,23 @@ function send(hit: Hit): void {
 }
 
 // a page was opened ("/help"); old "#/help" style routes count the same way
+// only the first page of a visit says where the visit came from
+let firstPage = true;
+
 export function countPage(route: string, title: string): void {
-  send({ path: route.replace(/^#/, '') || '/', title });
+  const hit: Hit = { path: route.replace(/^#/, '') || '/', title };
+  if (firstPage) {
+    firstPage = false;
+    const ref = sourceSite(document.referrer, location.hostname);
+    const campaign = campaignFrom(location.search);
+    if (ref) hit.ref = ref;
+    if (campaign) hit.campaign = campaign;
+    // tidy the tag out of the address bar, so it isn't copied when the page is shared
+    if (/[?&](utm_[a-z]+|ref)=/.test(location.search)) {
+      history.replaceState(history.state, '', location.pathname + location.hash);
+    }
+  }
+  send(hit);
 }
 
 // each step of the funnel counts once per visit, so going back and forth doesn't inflate it

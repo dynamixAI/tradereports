@@ -6,7 +6,7 @@ export const SITE = {
   place: 'Wigan, England',
   email: 'info@tradereports.co.uk',
   // the date the legal pages last changed
-  updated: '13 November 2026',
+  updated: '14 November 2026',
   // GoatCounter code (the "tradereports" in tradereports.goatcounter.com); empty sends nothing
   counter: 'tradereports',
 };
