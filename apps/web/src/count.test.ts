@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { band, countUrl, shouldSend, showNotice, visitTally } from './count';
+import {
+  band,
+  campaignFrom,
+  countUrl,
+  shouldSend,
+  showNotice,
+  sourceSite,
+  visitTally,
+} from './count';
 
 describe('which report this is, as a band', () => {
   it('puts each count in a band, never the number itself', () => {
@@ -89,5 +97,34 @@ describe('the one-time notice about counting', () => {
   });
   it('is not needed when the browser sends Global Privacy Control, as nothing is counted', () => {
     expect(showNotice({ ...fresh, gpc: true })).toBe(false);
+  });
+
+  it('keeps only the name of the site a visit came from', () => {
+    expect(sourceSite('https://www.google.com/search?q=unpaid+invoice', 'tradereports.co.uk')).toBe(
+      'https://www.google.com',
+    );
+    expect(sourceSite('https://www.linkedin.com/feed/update/123', 'tradereports.co.uk')).toBe(
+      'https://www.linkedin.com',
+    );
+    // moving around our own site, or no referrer at all, sends nothing
+    expect(sourceSite('https://tradereports.co.uk/help', 'tradereports.co.uk')).toBeUndefined();
+    expect(sourceSite('', 'tradereports.co.uk')).toBeUndefined();
+    expect(sourceSite('android-app://com.example', 'tradereports.co.uk')).toBeUndefined();
+  });
+
+  it('reads a tidy campaign tag from our own links and ignores anything else', () => {
+    expect(campaignFrom('?utm_campaign=LinkedIn-AI-post')).toBe('linkedin-ai-post');
+    expect(campaignFrom('?ref=facebook-trades')).toBe('facebook-trades');
+    expect(campaignFrom('?utm_campaign=john@example.com')).toBeUndefined();
+    expect(campaignFrom('?utm_campaign=has spaces')).toBeUndefined();
+    expect(campaignFrom('')).toBeUndefined();
+  });
+
+  it('sends the source site and campaign to GoatCounter', () => {
+    const url = new URL(
+      countUrl('abc', { path: '/', ref: 'https://www.google.com', campaign: 'linkedin-ai-post' }),
+    );
+    expect(url.searchParams.get('r')).toBe('https://www.google.com');
+    expect(url.searchParams.get('q')).toBe('?utm_campaign=linkedin-ai-post');
   });
 });
