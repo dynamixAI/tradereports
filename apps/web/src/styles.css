@@ -1821,3 +1821,17 @@ button.s-card:hover {
 .example-banner .link {
   margin-left: 4px;
 }
+
+/* feedback box at the end of the report */
+.feedback {
+  margin: 40px 0 8px;
+  padding: 22px 24px;
+  border: 1px solid var(--copper);
+  border-radius: 14px;
+}
+.feedback h2 {
+  margin: 0 0 8px;
+}
+.feedback p {
+  margin: 0 0 16px;
+}
