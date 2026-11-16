@@ -8,6 +8,7 @@ import { Download } from './Download';
 import { FolderPicker } from './FolderPicker';
 import { remembering } from './remember';
 import { countReport } from '../count';
+import { SITE } from '../site';
 import { EXAMPLE_DATE } from './example';
 import { Since } from './Since';
 import {
@@ -378,6 +379,21 @@ export function Report({
           </details>
         ))}
       </Section>
+
+      {/* ask for feedback; opens their own email app, nothing is sent by us */}
+      <aside className="feedback no-print">
+        <h2>Was this useful?</h2>
+        <p>
+          I'm Pius, and I built TradeReports on my own. Tell me what helped, what didn't, or what's
+          missing. Even one line helps.
+        </p>
+        <a
+          className="try"
+          href={`mailto:${SITE.email}?subject=${encodeURIComponent('TradeReports feedback')}`}
+        >
+          Email {SITE.email}
+        </a>
+      </aside>
     </div>
   );
 }
