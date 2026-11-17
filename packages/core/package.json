@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "papaparse": "5.7.0",
+    "papaparse": "5.7.1",
     "xlsx": "file:../../vendor/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
